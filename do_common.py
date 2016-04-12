@@ -245,7 +245,8 @@ def alpha_num_str(stri):
     stri=stri.replace(u'\xe0','a')
     #correspond au caractere a chapeau
     stri=stri.replace(u'\xe2','a')
-    
+    #correspond au caractere a chapeau
+    stri=stri.replace( extract.make_unicode('/'), '_')
     #convert to string and ignore other strange caractere
     stri=stri.encode('utf-8').decode('ascii','ignore')
     stri = str(stri)
