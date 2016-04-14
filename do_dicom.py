@@ -135,7 +135,6 @@ def update_exam_sql_db(Ei,test=False,do_only_insert=False):
                     field_change.append(f)
                     #field_new_value.append(E[f])
                     #field_old_value.append(data[f])
-                    
             if do_only_insert is False:                    
                 if dicom_changes:
                     infostr = "SQL UPDATE of pat=%s : proto=%s : date=%s "%(E['PatientsName'],E['eid'],E['AcquisitionTime'])
@@ -199,7 +198,6 @@ def get_sql_update_cmd(E,crid):
     
     #sqlcmd = sqlcmd[:-1] + " WHERE rid = %s AND AcquisitionTime = '%s' " % (E["rid"],E["AcquisitionTime"])
     sqlcmd = sqlcmd[:-1] + " WHERE crid = %s " % (crid)
-    
     return sqlcmd
 
 def get_sql_insert_cmd(E):
@@ -220,7 +218,6 @@ def get_sql_insert_cmd(E):
             raise NameError(msg)
     
     sqlcmd = sqlcmd[:-1]+")"
-        
     return sqlcmd
     
 #def send_all_exam_info_to_sqldb(in_dir,verbose=True):
@@ -352,13 +349,18 @@ def separate_exam_series(series_dir):
             continue
         
         if len(ps.dir("AcquisitionDate"))==0:
-            log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie",thefile)
-            continue
-        
+            if len(ps.dir("StudyDate"))==0:
+                log.warning("STrange dicom file %s has no tag Acquisition Date and non Study dateskiping serie",thefile)            
+                continue
+            else:
+                acdate.append(ps.StudyDate)
+                actime.append(ps.SeriesTime)  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
+        else:
+            acdate.append(ps.AcquisitionDate)
+            actime.append(ps.AcquisitionTime)  
+     
         ser_ok.append(ser)
-        actime.append(ps.AcquisitionTime)  
-        acdate.append(ps.AcquisitionDate)
-    
+        
     nda = np.array(acdate,np.int16)        
     [nu,ii,indu] = np.unique(nda,True,True)
     #regroup series with the same acquisition date and order give the acquisition time    
@@ -493,8 +495,15 @@ def get_dicom_exam_info(dic1,dic2):
     dicinfo["PatientsName"] = re.sub('\W','_',dicinfo["PatientsName"])
     
     #appen date to SacisitionTime and format time
-    dstr = p1.AcquisitionDate
-    tstr = dicinfo["AcquisitionTime"]
+    if len(p1.dir("AcquisitionDate"))==0:
+        dstr = p1.StudyDate
+        tstr = p1.SeriesTime  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
+
+    else:
+        dstr = p1.AcquisitionDate
+        tstr = dicinfo["AcquisitionTime"]
+
+    
     #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
     dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
 
@@ -503,16 +512,23 @@ def get_dicom_exam_info(dic1,dic2):
     dstr = p1.PatientsBirthDate
     dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
 
-    if p2.has_key("PaitentsAge"):
-        dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
-    
+    if "PatientsAge" in dicinfo:
+        pa = dicinfo["PatientsAge"]
+        if pa[-1]=='Y':
+            pa = pa[0:-1]
+        dicinfo["PatientsAge"] = int(pa)
+
     if p2.has_key(0x051100a):
         dur = get_series_duration_from_siemens_tag(p2[0x0051,0x100a].value)
         
     else:
         dur = get_series_duration_from_file(dic2)
     
-    deltadur = get_second_from_time_str(p2.AcquisitionTime) - get_second_from_time_str(p1.AcquisitionTime)
+    if len(p2.dir("AcquisitionDate"))==0:
+        deltadur = get_second_from_time_str(p2.SeriesTime) - get_second_from_time_str(p1.SeriesTime)
+    else:
+        deltadur = get_second_from_time_str(p2.AcquisitionTime) - get_second_from_time_str(p1.AcquisitionTime)
+        
     if deltadur<0:
         msg = "ERROR Negative acquisition time for %s compare to %s" % (os.path.dirname(dic2),os.path.basename(os.path.dirname(dic1) ))
         deltadur = math.fabs(deltadur)
@@ -544,7 +560,6 @@ def get_dicom_exam_info(dic1,dic2):
     else:
         dicinfo["eid"] = dicinfo["StudyDescription"]
         dicinfo["facturable"]=0
-      
     return dicinfo
     
 def get_second_from_time_str(tstr):
