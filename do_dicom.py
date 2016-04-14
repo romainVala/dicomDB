@@ -353,7 +353,7 @@ def separate_exam_series(series_dir):
         
         if len(ps.dir("AcquisitionDate"))==0:
             log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie",thefile)
-            break
+            continue
         
         ser_ok.append(ser)
         actime.append(ps.AcquisitionTime)  
