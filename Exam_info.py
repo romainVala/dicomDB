@@ -8,7 +8,7 @@ from dcmstack import extract , NiftiWrapper
 #import warnings
 from glob import glob
 from do_common import alpha_num_str
-
+import pdb
 class Exam_info:
     'Class to collected dicom information from dicom dirs'    
     
@@ -70,7 +70,7 @@ class Exam_info:
                     all_file,ttt = self.get_all_dicom_file(oneserie)
                     dic = self.get_dicom_serie_info(all_file,convert_to_nii)                
                     dicinfo_serie.append(dic)
-
+                    
                 fdicinfo = dicinfo_serie[0]
                 if "_first_file" in fdicinfo :
                     first_file = fdicinfo["_first_file"]
@@ -123,11 +123,25 @@ class Exam_info:
         dicinfo={}
     
         p1=dicom.read_file(dic1,stop_before_pixels=True)
-    
-        dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
+        
+        
         dicinfo["ExamNum"] = int(p1.StudyID)
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
+        
         dicinfo["MachineName"] = p1.ManufacturersModelName
+        
+        if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
+            if 'StudyDescription' in p1 and len(p1.StudyDescription)>0:
+                dicinfo["ExamName"]= alpha_num_str(p1.StudyDescription)
+            elif 'ProtocolName' in p1 and len(p1.ProtocolName)>0 and p1.ProtocolName!= ' ':
+                dicinfo["ExamName"]= alpha_num_str(p1.ProtocolName)
+            else:
+                
+                dicinfo["ExamName"]="Atrier"
+                
+        elif len(p1.StudyDescription)>0:
+            dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
+            
         dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
         
         #appen date to SacisitionTime and format time
@@ -145,7 +159,7 @@ class Exam_info:
            if 'TENSOR' not in alpha_num_str(p1.SeriesDescription):
                self.log.warning('I thougth it was only for TENSOR ...check AcquisitionTime')               
 
-
+        
         #sorte dicom series      
         nn = sorted(dicinfo_serie,key=lambda k: k["SNumber"])
         
@@ -181,11 +195,14 @@ class Exam_info:
         dicinfo["PatientsWeight"] = int(p1.PatientsWeight)        
         dstr = p1.PatientsBirthDate
         if len(p1.PatientBirthDate)>0:
-                dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
-        dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
-        dicinfo["PatientsSex"] = p1.PatientsSex
-        
-        dicinfo["SoftwareVersions"] = p1.SoftwareVersions
+            dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
+            
+        if len(p1.PatientsAge)>0:            
+            dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
+        if len(p1.PatientsSex)>0:
+            dicinfo["PatientsSex"] = p1.PatientsSex
+        if "SoftwareVersions" in p1:
+            dicinfo["SoftwareVersions"] = p1.SoftwareVersions
         
         dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(dic2))
         dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
@@ -200,8 +217,11 @@ class Exam_info:
             return dicinfo
 
         seqname = dicinfo["SeqName"]
-        seqname2 = dicinfo["SeqName2"]
-        
+        if "SeqName2" in dicinfo:
+            seqname2 = dicinfo["SeqName2"]
+        else:
+            seqname2=seqname
+            
         if 'ep_b' in seqname: 
             dicinfo["SeqType"] = 'DWI'
         elif 'epfid' in seqname:
@@ -247,7 +267,7 @@ class Exam_info:
         """
         extract series dicom info
         """
-    
+        
         self.log.info('Extracting info for %s',alldic[0])
         
         dicinfo={}
@@ -276,8 +296,13 @@ class Exam_info:
         dicinfo["SNumber"] = int(p1.SeriesNumber)
         
         dicinfo["SUID"] = "%s"%(p1.SeriesInstanceUID)
-
-        dicinfo["ImageType"] = my_list_to_str(p1.ImageType,sep='_')    
+        if "ImageType" in p1:
+            
+            dicinfo["ImageType"] = my_list_to_str(p1.ImageType,sep='_')    
+        else:
+            dicinfo["ImageType"] =p1.Modality
+            
+                 
         if "ScanOptions" in p1:
             dicinfo["ImageType"] = dicinfo["ImageType"] + "|" + my_list_to_str(p1.ScanOptions,sep='')
         
@@ -289,16 +314,17 @@ class Exam_info:
             if csatype.find('SPEC NUM')>=0:
                 dicinfo["SeqType"] = 'spectro'
 #            return self.get_dicom_serie_spectro_info(p1,dicinfo)
-      
-        if "MIP_SAG" in p1.ImageType or "MIP_COR" in p1.ImageType or "MIP_TRA" in p1.ImageType :
+        if "ImageType" in p1:
+          if "MIP_SAG" in p1.ImageType or "MIP_COR" in p1.ImageType or "MIP_TRA" in p1.ImageType :
             dicinfo["SeqName"] = "MIP"
             makeitshort=True
             
-        if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
+          if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
             dicinfo["SeqName"] = "spectroCSI"            
             makeitshort=True
             
-        if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
+                    
+          if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
             or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientsName \
             or 'MOCO' in p1.ImageType or 'DUMMY IMAGE' in p1.ImageType or 'TTEST' in p1.ImageType :
@@ -312,6 +338,9 @@ class Exam_info:
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
         
+        if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
+            makeitshort=False
+            
         if makeitshort:
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
@@ -326,7 +355,8 @@ class Exam_info:
             self.log.warning('BAD DICOM first file ? %s becaus %s',alldic[0],e)
             dicinfo["corrupt"] = "Bad DICOMextract"
             return dicinfo                            
-
+        
+               
         if 'SequenceName' in p1:
             dicinfo["SeqName"] = p1.SequenceName 
             dicinfo["TR"] =  float(p1.RepetitionTime)
@@ -363,7 +393,21 @@ class Exam_info:
             
             scan_seq = my_list_to_str(p1.ScanningSequence)
             acquisitionType =  str(p1.MRAcquisitionType)
-                
+            
+        elif "PT" in p1.Modality: #for PT params
+            dicinfo["Seqname"]=p1.SeriesDescription
+            
+            aa=p1.PixelSpacing
+            dicinfo["dimX"] = int(p1.Rows)
+            dicinfo["dimY"] = int(p1.Columns) #do not work for mosaic
+            dicinfo["dimZ"] = 0
+            
+            dicinfo["sizeX"] = float(aa[0])
+            dicinfo["sizeY"] = float(aa[1])
+            dicinfo["sizeZ"] = float(p1.SliceThickness)
+            acquisitionType=p1.SeriesType[0]
+            
+            
         else:        #try to find equivalent just in the CSA header (some data missing the elementary dicom field)
             if "SeqType" not in dicinfo : #so this is not a spectro dataset
                 self.log.warning("No SequenceName in dicom of  %s so loking in csa_siemens_header",alldic[0])  
@@ -406,15 +450,17 @@ class Exam_info:
                 dicinfo["PhaseDir"] =meta.get('CsaImage.PhaseEncodingDirection')
                 dicinfo["Affine"] = my_list_to_str(meta.get('CsaImage.ImageOrientationPatient'))
                 dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(meta.get('CsaImage.ImagePositionPatient'))
-        
+                
+                if 'CsaImage.ScanningSequence' in meta:
+                    scan_seq = my_list_to_str(meta.get('CsaImage.ScanningSequence')) 
+                    
             if meta.has_key('InversionTime'):
                 dicinfo["TI"] = int(meta.get('InversionTime'))                
 
             
             if meta.has_key('ScanningSequence'):
                 scan_seq = my_list_to_str(meta.get('ScanningSequence'))
-            else :
-                scan_seq = my_list_to_str(meta.get('CsaImage.ScanningSequence'))            
+                       
             
             if meta.has_key('MRAcquisitionType'):
                 acquisitionType = str(meta.get('MRAcquisitionType')) #may be empty
@@ -439,11 +485,12 @@ class Exam_info:
         
         if meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
+       
         else:
             dicinfo["CoilName"] = "NULL"
-            
-        dicinfo["SeqName2"] = str(meta.get('CsaSeries.MrPhoenixProtocol.tSequenceFileName'))
-        dicinfo["SeqName2"] = scan_seq + dicinfo["SeqName2"] + '_' + acquisitionType
+        if meta.has_key('CsaSeries.MrPhoenixProtocol.tSequenceFileName'):   
+            dicinfo["SeqName2"] = str(meta.get('CsaSeries.MrPhoenixProtocol.tSequenceFileName'))
+            dicinfo["SeqName2"] = scan_seq + dicinfo["SeqName2"] + '_' + acquisitionType
         
         if meta.has_key('CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].dInPlaneRot'):
             dicinfo["PhaseAngle"] = float(meta.get('CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].dInPlaneRot'))
@@ -487,7 +534,7 @@ class Exam_info:
 
         if meta.has_key("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"):
             dicinfo["CGating"] = int( meta.get("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"))
-
+        
         dicinfo = self.deduce_other_info(dicinfo)
         
         
@@ -524,9 +571,10 @@ class Exam_info:
             #EPI nbvol
             elif 'CsaSeries.MrPhoenixProtocol.lRepetitions' in meta :
                 nb_vol = meta.get('CsaSeries.MrPhoenixProtocol.lRepetitions') + 1   
-    
-            imatype = meta.get('ImageType')
-            
+            if 'ImageType' in meta: 
+                imatype = meta.get('ImageType')
+            else:
+                imatype= "Other"
             if 'CsaSeries.MrPhoenixProtocol.lContrasts' in meta :
                 #Attention que pour les field map
                 if (not 'P' in imatype) or (dicinfo["SeqType"]!='GreFieldMap') :#for Field Map phase: 1 serie only : the diff is saved
@@ -582,8 +630,17 @@ class Exam_info:
             n_repeat=0
             duplicate_dicom=[]
             for vol in v: #vol[0] champs de pydicom vol[1] ordererd dict
+                
                 try:
+                    """
+                    Add infos to meta to keep the diffusion directions in the GE PET-MR system
+                    meta["Diffusioninfos"]=[dir1 dir2 dir3 bval]
+                    """        
+                    if [0x19,0x10bb] in p1:
+                        vol[1]["Diffusioninfos"]=[vol[0][0x19,0x10bb].value, vol[0][0x19,0x10bc].value, vol[0][0x19,0x10bd].value, vol[0][0x43,0x1039][0]]
+                        
                     my_stack.add_dcm(vol[0],meta=vol[1])
+                    
                 except dcmstack.IncongruentImageError:
                     n_ommited += 1
                 except dcmstack.ImageCollisionError:
@@ -673,11 +730,14 @@ class Exam_info:
                 dicinfo["nifti_volumes"]+=o_name+','
             dicinfo["nifti_volumes"] = dicinfo["nifti_volumes"][:-1]
             dicinfo["nifti_dir"] = o_path
-            
+           
             if len(shape)>3:
                 if dicinfo["SeqType"] is 'DWI' :
                     self.write_diff_to_file(nw,o_path)
-                            
+                
+                elif "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer") and "EP" in meta.get("ScanningSequence"):  
+                    self.write_diff_to_file(nw,o_path)
+                
         return dicinfo
  
     def get_group_stack_from_dic(self,alldic,
@@ -825,7 +885,7 @@ class Exam_info:
             del data1
             del data2
             del nw1
-
+            
         if convert_nii:
             nii.to_filename(out_path)
             self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
@@ -851,12 +911,28 @@ class Exam_info:
     def get_exam_suj_ser_from_dicom_meta(self,meta):
         
         if "StudyDescription" not in meta : #Service patient on prisma has none
-            exa = "ServicePatient"
-            str_date = str(meta["AcquisitionDate"])
-            str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
-            suj = str_date + '_' + alpha_num_str(meta["PatientName"])            
-            ser = 'S%02d' % meta.get('SeriesNumber')
-            return(exa,suj,ser)
+            if "ProtocolName" not in meta :
+                
+                exa = "ServicePatient"
+                str_date = str(meta["AcquisitionDate"])
+                str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
+                suj = str_date + '_' + alpha_num_str(meta["PatientName"])            
+                ser = 'S%02d' % meta.get('SeriesNumber')
+                
+                if "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer"):
+                    exa="Atrier"
+                    str_date = str(meta["AcquisitionDate"])
+                    str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
+                    suj = str_date + '_' + alpha_num_str(meta["PatientName"])         
+                    ser = alpha_num_str(meta.get('SeriesDescription'))
+                    if 'LST' in meta.get("Modality"):
+                        ser=alpha_num_str(meta.get("Modality"))
+                    if 'RAW' in meta.get("Modality"):
+                        ser=alpha_num_str(meta.get("Modality"))
+                
+                return(exa,suj,ser)
+            else:
+                exa = alpha_num_str(meta["ProtocolName"]) 
         else:
             exa = alpha_num_str(meta["StudyDescription"]) 
         
@@ -890,6 +966,7 @@ class Exam_info:
             suj += '_E' + exaid
         elif int(exaid)>1:
             suj += '_E' + exaid
+        
         ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
         
         return(exa,suj,ser)
@@ -899,12 +976,28 @@ class Exam_info:
         shape = nw.nii_img.get_shape()
         bval=[]
         bvec=[]
+        
         for ind in range(shape[3]):
-            diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
-            if diffdir is None:
-                diffdir =  [0, 0, 0] 
-            bvec.append( diffdir )
-            bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
+                
+                if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
+                    diffinfos=nw.get_meta("Diffusioninfos",(0,0,0,ind))
+                    diffdir=diffinfos[0:3]
+                    bvaltmp=diffinfos[3]
+                else:
+                
+            
+                    diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
+            
+                if diffdir is None:
+                    diffdir =  [0, 0, 0] 
+                bvec.append( diffdir )
+                
+                if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
+                    
+                    bval.append(bvaltmp)
+                else:
+            
+                    bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
         
         bv = np.matrix(bvec)
         bval = np.array(bval,ndmin=2).T #bval.reshape((bval.size,1))
@@ -1094,16 +1187,23 @@ class Exam_info:
             if len(thefile)==0:
                 #self.log.info('Siking %s because empyt', ser)
                 continue
-            ps=dicom.read_file(thefile,stop_before_pixels=True)
-            
+            try:
+                
+                ps=dicom.read_file(thefile,stop_before_pixels=True)
+            except:
+                """
+                la fonction dicom read file ne fonctionne pas sur les GEMS PET RAW  pas de transformation en NIFTI possible de toute facon
+                """
+                continue
             # I remove exclusion of 'FM' imagetype because it is present in some T1 (ex MS_SPI S02)
-            if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
-            'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
-            or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
-            or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
+            if "ImageType" in ps:
+                if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
+                'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
+                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
+                or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
-                if self.skip_derived_series:
-                    continue
+                    if self.skip_derived_series:
+                        continue
 
                     
             if 'ImageComments' in ps:
