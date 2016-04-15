@@ -180,8 +180,8 @@ class Exam_info:
         
         dicinfo["PatientsWeight"] = int(p1.PatientsWeight)        
         dstr = p1.PatientsBirthDate
-	if len(p1.PatientBirthDate)>0:
-            dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
+        if len(p1.PatientBirthDate)>0:
+                dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
         dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
         dicinfo["PatientsSex"] = p1.PatientsSex
         
@@ -195,9 +195,9 @@ class Exam_info:
         
     def deduce_other_info(self,dicinfo):
         
-	if 'SeqName' not in dicinfo:
-	    dicinfo["SeqType"]='todo'
-	    return dicinfo
+        if 'SeqName' not in dicinfo:
+            dicinfo["SeqType"]='todo'
+            return dicinfo
 
         seqname = dicinfo["SeqName"]
         seqname2 = dicinfo["SeqName2"]
@@ -311,7 +311,7 @@ class Exam_info:
             p1.ImageComments.find('t-Map')>=0 :
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
-	
+        
         if makeitshort:
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
@@ -368,7 +368,7 @@ class Exam_info:
             if "SeqType" not in dicinfo : #so this is not a spectro dataset
                 self.log.warning("No SequenceName in dicom of  %s so loking in csa_siemens_header",alldic[0])  
             
-	    if 'CsaImage.SequenceName' in meta :
+            if 'CsaImage.SequenceName' in meta :
                 dicinfo["SeqName"] =  meta.get('CsaImage.SequenceName')     
                 dicinfo["TR"] =  float( meta.get('CsaImage.RepetitionTime'))
                 dicinfo["TE"] = float(  meta.get('CsaImage.EchoTime'))
