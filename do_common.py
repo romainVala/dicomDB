@@ -225,6 +225,9 @@ def alpha_num_str(stri):
     from dcmstack import extract
     import re
     
+    if len(stri)==0:
+        return stri
+        
     if type(stri) is not unicode:
         stri = extract.make_unicode(stri)
     
