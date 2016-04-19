@@ -275,9 +275,13 @@ class Exam_info:
         dic1 = alldic[0]
         p1=dicom.read_file(dic1,stop_before_pixels=True)
     
-        
-        dstr = p1.AcquisitionDate
-        tstr = p1.AcquisitionTime
+        if len(p1.dir("AcquisitionDate"))==0:
+            dstr = p1.StudyDate
+            tstr = p1.StudyTime  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing    
+        else:
+            dstr = p1.AcquisitionDate
+            tstr = p1.AcquisitionTime
+            
         #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcqTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
         
@@ -966,7 +970,9 @@ class Exam_info:
             suj += '_E' + exaid
         elif int(exaid)>1:
             suj += '_E' + exaid
-        
+        if 'SeriesDescription' not  in meta:
+            meta["SeriesDescription"] = 'nodescription'
+            
         ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
         
         return(exa,suj,ser)
@@ -1203,6 +1209,7 @@ class Exam_info:
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
+                        self.log.info(" Skiping because derived",thefile)
                         continue
 
                     
@@ -1210,13 +1217,15 @@ class Exam_info:
                 if ps.ImageComments.find('Design Matrix')>=0 or ps.ImageComments.find('Merged Image: t')>=0 or \
                 ps.ImageComments.find('t-Map')>=0 :
                     if self.skip_derived_series:
+                        self.log.info(" Skiping because derived",thefile)
                         continue
             
             if len(ps.dir("AcquisitionDate"))==0:
-                self.log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie",thefile)
-                if self.skip_derived_series:
-                    continue
-                else:
+                self.log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie Taking Study time and date",thefile)
+                if len(actime)==0:
+                    ps.AcquisitionTime = ps.StudyTime
+                    ps.AcquisitionDate = ps.StudyDate              
+                else:                                                        
                     ps.AcquisitionTime = actime[-1]
                     ps.AcquisitionDate = acdate[-1]
                 
