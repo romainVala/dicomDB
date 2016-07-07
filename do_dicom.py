@@ -342,6 +342,9 @@ def separate_exam_series(series_dir):
             continue
         ps=dicom.read_file(thefile)
         
+        if not 'ImageType' in ps :
+            log.warning("Oups No imageType skiping ser %s",ser)
+        
         if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
         'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
         or 'FM' in ps.ImageType or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
@@ -514,7 +517,8 @@ def get_dicom_exam_info(dic1,dic2):
 
     if "PatientsAge" in dicinfo:
         pa = dicinfo["PatientsAge"]
-        if pa[-1]=='Y':
+        #if pa[-1]=='Y':
+        if not pa[-1].isdigit() : 
             pa = pa[0:-1]
         dicinfo["PatientsAge"] = int(pa)
 
