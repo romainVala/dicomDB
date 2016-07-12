@@ -344,6 +344,7 @@ def separate_exam_series(series_dir):
         
         if not 'ImageType' in ps :
             log.warning("Oups No imageType skiping ser %s",ser)
+            continue
         
         if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
         'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
