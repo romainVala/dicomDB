@@ -125,8 +125,8 @@ class Cenir_DB:
     def find_sql_doublon(self):
         #self.remove_lixium_duplicate_exam()
         #self.check_dicom_remove()        
-        #self.remove_duplicate_exam()
-        self.remove_duplicate_exam_correct()
+        self.remove_duplicate_exam()
+        #self.remove_duplicate_exam_correct()
         #self.remove_duplicate_serieUID()
         #self.remove_duplicate_serie()
         
@@ -664,11 +664,13 @@ class Cenir_DB:
                
                 if type(v) is float:
                     sqlcmd = "%s round(%s*100000) = round(%s*100000) AND" %(sqlcmd,k,v)
+                elif v is "NULL":
+                    sqlcmd = "%s %s is NULL AND" %(sqlcmd,k)
                 else:
                     sqlcmd = "%s %s like '%s' AND" %(sqlcmd,k,v)
                 
         sqlcmd = sqlcmd[:-3]
-        #print sqlcmd
+        self.log.debug('sql select line %s', sqlcmd)
         
         cur.execute(sqlcmd)
         data={}
