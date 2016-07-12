@@ -229,7 +229,7 @@ class Exam_info:
         elif 'spc3d' in seqname:
             dicinfo["SeqType"] = 'SPACE3D'
         elif 'tfl3d' in seqname:
-            if 'mp2rage' in dicinfo["SeqName2"]:
+            if 'mp2rage' in seqname2:
                 if 'INV1' in dicinfo["SName"]:
                     dicinfo["SeqType"] = 'MP2RAGE_INV1'
                 elif 'INV2' in dicinfo["SName"]:
@@ -344,6 +344,10 @@ class Exam_info:
         
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             makeitshort=False
+        
+        if 'DERIVED' in p1.ImageType and 'PRIMARY' in p1.ImageType and 'UNI' in p1.ImageType: #exception for mp2rage UNI
+            makeitshort=False
+            
             
         if makeitshort:
             dicinfo["Duration"] = 0
@@ -489,7 +493,9 @@ class Exam_info:
         
         if meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
-       
+        if meta.has_key('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'):  #for prisma it seems to be an other field
+            dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'))
+            
         else:
             dicinfo["CoilName"] = "NULL"
         if meta.has_key('CsaSeries.MrPhoenixProtocol.tSequenceFileName'):   
@@ -1017,13 +1023,14 @@ class Exam_info:
 
         bvecnew = np.dot(bv,rot)
         out_path = os.path.join(dest_dir, 'diffusion_dir.bvecs')        
-        np.savetxt(out_path,np.array(bvecnew).T,'%1.5f',' ')
-        out_path = os.path.join(dest_dir, 'diffusion_dir.bvals')
-        np.savetxt(out_path,np.array(bval).T,'%d')
-
-
-        out_path = os.path.join(dest_dir, 'diffusion_dir.txt')
-        np.savetxt(out_path,np.concatenate((bval,bv),axis=1),'%1.5f')
+        if os.path.isfile(out_path) :
+            self.log.info('Skiping writting diffusion dir, because exist')
+        else:
+            np.savetxt(out_path,np.array(bvecnew).T,'%1.5f',' ')
+            out_path = os.path.join(dest_dir, 'diffusion_dir.bvals')
+            np.savetxt(out_path,np.array(bval).T,'%d')
+            out_path = os.path.join(dest_dir, 'diffusion_dir.txt')
+            np.savetxt(out_path,np.concatenate((bval,bv),axis=1),'%1.5f')
 #    vox = sqrt(diag(mat'*mat));  e=eye(3) ;e(1,1)=vox(1);e(2,2)=vox(2);e(3,3)=vox(3);
 #    rot = mat/e;
 
@@ -1202,14 +1209,15 @@ class Exam_info:
                 """
                 continue
             # I remove exclusion of 'FM' imagetype because it is present in some T1 (ex MS_SPI S02)
+            # remove     or 'DERIVED' in ps.ImageType because of mp2rage uni (DERIVED\PRIMARY\M\ND\UNI)
             if "ImageType" in ps:
-                if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
+                if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
                 or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
-                        self.log.info(" Skiping because derived",thefile)
+                        self.log.info(" Skiping because derived %s",thefile)
                         continue
 
                     
@@ -1217,7 +1225,7 @@ class Exam_info:
                 if ps.ImageComments.find('Design Matrix')>=0 or ps.ImageComments.find('Merged Image: t')>=0 or \
                 ps.ImageComments.find('t-Map')>=0 :
                     if self.skip_derived_series:
-                        self.log.info(" Skiping because derived",thefile)
+                        self.log.info(" Skiping because derived %s",thefile)
                         continue
             
             if len(ps.dir("AcquisitionDate"))==0:
