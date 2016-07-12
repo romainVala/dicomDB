@@ -50,6 +50,9 @@ class doit:
         parser.add_option("-l","--logfile", action="store", dest="logfile", default='',
                                     help="full path to the log file default=''")
 
+        parser.add_option("--debug", action ="store_true",dest="debug",default=False,
+                                  help="if specify this will print more and more info")
+
         parser.add_option("-m","--send_mail", action ="store_true",dest="send_mail",default=False,
                                   help="if specify this send a mail for missing dicom file")
         parser.add_option("--send_mail_file", action ="store",dest="send_mail_file",default='',
@@ -161,6 +164,9 @@ class doit:
 
 
         self.options = options
+        
+        if options.debug :
+            self.log.setLevel(logging.DEBUG)
 
         self.log.info('Runing with option \n%s',self.options_to_str())
         
