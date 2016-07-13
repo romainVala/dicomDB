@@ -197,8 +197,7 @@ class Exam_info:
         if len(p1.PatientBirthDate)>0:
             dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
             
-        if len(p1.PatientsAge)>0:
-            
+        if len(p1.PatientsAge)>0:            
             dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
         if len(p1.PatientsSex)>0:
             dicinfo["PatientsSex"] = p1.PatientsSex
@@ -214,8 +213,8 @@ class Exam_info:
     def deduce_other_info(self,dicinfo):
         
         if 'SeqName' not in dicinfo:
-	    dicinfo["SeqType"]='todo'
-	    return dicinfo
+            dicinfo["SeqType"]='todo'
+            return dicinfo
 
         seqname = dicinfo["SeqName"]
         if "SeqName2" in dicinfo:
@@ -230,7 +229,7 @@ class Exam_info:
         elif 'spc3d' in seqname:
             dicinfo["SeqType"] = 'SPACE3D'
         elif 'tfl3d' in seqname:
-            if 'mp2rage' in dicinfo["SeqName2"]:
+            if 'mp2rage' in seqname2:
                 if 'INV1' in dicinfo["SName"]:
                     dicinfo["SeqType"] = 'MP2RAGE_INV1'
                 elif 'INV2' in dicinfo["SName"]:
@@ -276,9 +275,13 @@ class Exam_info:
         dic1 = alldic[0]
         p1=dicom.read_file(dic1,stop_before_pixels=True)
     
-        
-        dstr = p1.AcquisitionDate
-        tstr = p1.AcquisitionTime
+        if len(p1.dir("AcquisitionDate"))==0:
+            dstr = p1.StudyDate
+            tstr = p1.StudyTime  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing    
+        else:
+            dstr = p1.AcquisitionDate
+            tstr = p1.AcquisitionTime
+            
         #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcqTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
         
@@ -341,6 +344,10 @@ class Exam_info:
         
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             makeitshort=False
+        
+        if 'DERIVED' in p1.ImageType and 'PRIMARY' in p1.ImageType and 'UNI' in p1.ImageType: #exception for mp2rage UNI
+            makeitshort=False
+            
             
         if makeitshort:
             dicinfo["Duration"] = 0
@@ -413,7 +420,7 @@ class Exam_info:
             if "SeqType" not in dicinfo : #so this is not a spectro dataset
                 self.log.warning("No SequenceName in dicom of  %s so loking in csa_siemens_header",alldic[0])  
             
-	    if 'CsaImage.SequenceName' in meta :
+            if 'CsaImage.SequenceName' in meta :
                 dicinfo["SeqName"] =  meta.get('CsaImage.SequenceName')     
                 dicinfo["TR"] =  float( meta.get('CsaImage.RepetitionTime'))
                 dicinfo["TE"] = float(  meta.get('CsaImage.EchoTime'))
@@ -486,7 +493,9 @@ class Exam_info:
         
         if meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
-       
+        if meta.has_key('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'):  #for prisma it seems to be an other field
+            dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'))
+            
         else:
             dicinfo["CoilName"] = "NULL"
         if meta.has_key('CsaSeries.MrPhoenixProtocol.tSequenceFileName'):   
@@ -967,7 +976,9 @@ class Exam_info:
             suj += '_E' + exaid
         elif int(exaid)>1:
             suj += '_E' + exaid
-        
+        if 'SeriesDescription' not  in meta:
+            meta["SeriesDescription"] = 'nodescription'
+            
         ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
         
         return(exa,suj,ser)
@@ -1012,13 +1023,14 @@ class Exam_info:
 
         bvecnew = np.dot(bv,rot)
         out_path = os.path.join(dest_dir, 'diffusion_dir.bvecs')        
-        np.savetxt(out_path,np.array(bvecnew).T,'%1.5f',' ')
-        out_path = os.path.join(dest_dir, 'diffusion_dir.bvals')
-        np.savetxt(out_path,np.array(bval).T,'%d')
-
-
-        out_path = os.path.join(dest_dir, 'diffusion_dir.txt')
-        np.savetxt(out_path,np.concatenate((bval,bv),axis=1),'%1.5f')
+        if os.path.isfile(out_path) :
+            self.log.info('Skiping writting diffusion dir, because exist')
+        else:
+            np.savetxt(out_path,np.array(bvecnew).T,'%1.5f',' ')
+            out_path = os.path.join(dest_dir, 'diffusion_dir.bvals')
+            np.savetxt(out_path,np.array(bval).T,'%d')
+            out_path = os.path.join(dest_dir, 'diffusion_dir.txt')
+            np.savetxt(out_path,np.concatenate((bval,bv),axis=1),'%1.5f')
 #    vox = sqrt(diag(mat'*mat));  e=eye(3) ;e(1,1)=vox(1);e(2,2)=vox(2);e(3,3)=vox(3);
 #    rot = mat/e;
 
@@ -1197,13 +1209,15 @@ class Exam_info:
                 """
                 continue
             # I remove exclusion of 'FM' imagetype because it is present in some T1 (ex MS_SPI S02)
+            # remove     or 'DERIVED' in ps.ImageType because of mp2rage uni (DERIVED\PRIMARY\M\ND\UNI)
             if "ImageType" in ps:
-                if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
+                if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
                 or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
+                        self.log.info(" Skiping because derived %s",thefile)
                         continue
 
                     
@@ -1211,13 +1225,15 @@ class Exam_info:
                 if ps.ImageComments.find('Design Matrix')>=0 or ps.ImageComments.find('Merged Image: t')>=0 or \
                 ps.ImageComments.find('t-Map')>=0 :
                     if self.skip_derived_series:
+                        self.log.info(" Skiping because derived %s",thefile)
                         continue
             
             if len(ps.dir("AcquisitionDate"))==0:
-                self.log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie",thefile)
-                if self.skip_derived_series:
-                    continue
-                else:
+                self.log.warning("STrange dicom file %s has no tag Acquisition Date skiping serie Taking Study time and date",thefile)
+                if len(actime)==0:
+                    ps.AcquisitionTime = ps.StudyTime
+                    ps.AcquisitionDate = ps.StudyDate              
+                else:                                                        
                     ps.AcquisitionTime = actime[-1]
                     ps.AcquisitionDate = acdate[-1]
                 
