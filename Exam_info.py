@@ -199,6 +199,10 @@ class Exam_info:
             
         if len(p1.PatientsAge)>0:            
             dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
+            
+        if "PatientsSex" not in p1:
+            p1.PatientsSex='Unknown'
+        
         if len(p1.PatientsSex)>0:
             dicinfo["PatientsSex"] = p1.PatientsSex
         if "SoftwareVersions" in p1:
@@ -318,23 +322,27 @@ class Exam_info:
             if csatype.find('SPEC NUM')>=0:
                 dicinfo["SeqType"] = 'spectro'
 #            return self.get_dicom_serie_spectro_info(p1,dicinfo)
-        if "ImageType" in p1:
-          if "MIP_SAG" in p1.ImageType or "MIP_COR" in p1.ImageType or "MIP_TRA" in p1.ImageType :
+                
+        #Dicoms Lists PET
+        if "ImageType" not in p1:
+            p1.ImageType='PETorUnknown'
+        if "MIP_SAG" in p1.ImageType or "MIP_COR" in p1.ImageType or "MIP_TRA" in p1.ImageType :
             dicinfo["SeqName"] = "MIP"
             makeitshort=True
             
-          if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
+        if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
             dicinfo["SeqName"] = "spectroCSI"            
             makeitshort=True
             
                     
-          if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
+        if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
             or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientsName \
             or 'MOCO' in p1.ImageType or 'DUMMY IMAGE' in p1.ImageType or 'TTEST' in p1.ImageType :
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
-        
+        if 'DERIVED' in p1.ImageType and 'PRIMARY' in p1.ImageType and 'UNI' in p1.ImageType: #exception for mp2rage UNI
+            makeitshort=False
                     
         if 'ImageComments' in p1:
             if p1.ImageComments.find('Design Matrix')>=0 or p1.ImageComments.find('Merged Image: t')>=0 or \
@@ -345,8 +353,6 @@ class Exam_info:
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             makeitshort=False
         
-        if 'DERIVED' in p1.ImageType and 'PRIMARY' in p1.ImageType and 'UNI' in p1.ImageType: #exception for mp2rage UNI
-            makeitshort=False
             
             
         if makeitshort:
@@ -1401,7 +1407,7 @@ class Exam_info:
                         nn , ee = os.path.splitext(fin)
                         if len(ee)==0:
                             fin = nn+'.dic'
-
+                        
                         indn =  fin.find('(null)')
                         if indn >0 :
                             fout =  fin[:indn-1]+fin[indn+6:]
@@ -1419,7 +1425,36 @@ class Exam_info:
                         fin = os.path.join(pp,fin)
                         fout = os.path.join(dest_dir,fout)
                         fintxt = os.path.join(pp,fintxt)
-
+                        
+                        #Rangement des fichiers LIST PET en gardant l'arborescence GE au sein de l'arborescence CENIR
+                        try:
+                            
+                            if 'GEMS PET LST' in fin:
+                                # Mettre l'arborescence correspondant au fichier LIST (PESI/pXX/eXX/sXX/GEMS PET LSTDC pour pouvoir les remettres sur la machine)        
+                                path=os.path.dirname(fout)
+                                fin2=fin[fin.rfind('PESI'):]
+                                try:
+                                    
+                                    flist=vol[0][0x09,0x10da].value
+                                except:
+                                    pass
+                                flistin=fin[:fin.rfind('PESI')]+flist
+                                
+                                fout=os.path.join(path,fin2)
+                                foutlist=path+flist
+                                dirGEMS=os.path.dirname(fout)
+                                
+                                if not os.path.isdir(dirGEMS):
+                                    os.makedirs(dirGEMS)
+                                    
+                                if not os.path.isfile(foutlist):
+                                    dirlist=os.path.dirname(foutlist)
+                                    os.makedirs(dirlist)
+                                    shutil.copy2(flistin,foutlist)
+                        except:
+                            print 'Tried to copy PETlistfile without success'
+                            
+                        
                         shutil.copy2(fin,fout)
                         
                         if mv_file:            
@@ -1430,7 +1465,7 @@ class Exam_info:
             
         return new_dicom_dir                
         
-  
+
     
 def clean_str(stri):
 
