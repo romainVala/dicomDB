@@ -542,9 +542,6 @@ class Cenir_DB:
     def get_sql_exam_line(self,E,cur):
         
         sqlcmd = "SELECT * from exam WHERE "
-        
-        if "Ox Offline Recon" in E["MachineName"]:
-            E["MachineName"]="SIGNA PET/MR"
             
         if "SIGNA PET/MR" in E["MachineName"]:
             for f in self.db_GEexamID_field:
