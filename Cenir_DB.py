@@ -4,7 +4,7 @@
 import datetime
 import os
 from do_common import alpha_num_str_min
-    
+
 def add_options(parser):
 
     parser.add_option("--sql_doublon", action="store_true", dest="sql_doublon",default=False,
@@ -30,6 +30,10 @@ class Cenir_DB:
         "PatientsSex","PatientsWeight","SoftwareVersions","FirstSerieName","LastSerieName","dicom_dir")
         self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
         "PatientsSex","PatientsWeight","SoftwareVersions")
+        
+        #Pour le cas GE
+        self.db_GEexamID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","StudyTime")
+        
         
         if opt is not None:
             self.db_name = opt.db_name
@@ -65,6 +69,7 @@ class Cenir_DB:
         cur2 = con.cursor()
         
         for E in Ei:
+            
             exist_line = self.get_sql_exam_line(E,cur)
             if len(exist_line)>0 : 
                 self.log.info("Skiping (because exist) Exam insert of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['ExamName'],E['AcquisitionTime'])
@@ -75,7 +80,7 @@ class Cenir_DB:
                     for dicser in E["serie_info"] :
                         dicser["ExamRef"] = int(examID)
                         exist_UID_serie = self.get_sql_select_line('serie','SUID',dicser['SUID'],cur)
-                        
+                       
                         if len(exist_UID_serie)==0:
                             self.log.info("SQL INSERT serie %s num %d", dicser['SName'] , dicser['SNumber'])
                             #print self.get_sql_serie_insert_cmd(dicser)
@@ -538,19 +543,29 @@ class Cenir_DB:
         
         sqlcmd = "SELECT * from exam WHERE "
         
-        for f in self.db_examID_field :
-            if f=='AcquisitionTime':
-                aa='%s'%(E[f])
-                sqlcmd = "%s substr(AcquisitionTime,1,10) = '%s' AND" %(sqlcmd,aa[0:10])
-            else:
-                sqlcmd = "%s %s = '%s' AND" %(sqlcmd,f,E[f])
+        if "Ox Offline Recon" in E["MachineName"]:
+            E["MachineName"]="SIGNA PET/MR"
             
+        if "SIGNA PET/MR" in E["MachineName"]:
+            for f in self.db_GEexamID_field:
+                
+                sqlcmd = "%s %s = '%s' AND" %(sqlcmd,f,E[f])
+        else:
+            for f in self.db_examID_field :
+                if f=='AcquisitionTime':
+                    aa='%s'%(E[f])
+                    sqlcmd = "%s substr(AcquisitionTime,1,10) = '%s' AND" %(sqlcmd,aa[0:10])
+                else:
+                    sqlcmd = "%s %s = '%s' AND" %(sqlcmd,f,E[f])
+        
         sqlcmd = sqlcmd[:-3]
         cur.execute(sqlcmd)
         data={}
         if cur.rowcount>0:
             data = cur.fetchone()
             
+        self.log.debug('sql get_exam line %s', sqlcmd)
+        
         return data
 
 #    def get_sql_SUID_serie_line(self,ser,cur):
@@ -633,8 +648,11 @@ class Cenir_DB:
         sqlcmd = sqlcmd[:-1]+") VALUES("
         
         for ff in self.db_exam_field :
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime :
-                sqlcmd = "%s '%s'," % (sqlcmd,E[ff])
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode :
+                if E[ff]=="NULL":
+                    sqlcmd="%s %s," % (sqlcmd,E[ff])
+                else:
+                    sqlcmd = "%s '%s'," % (sqlcmd,E[ff])
             elif type(E[ff]) is int or type(E[ff]) is float:
                 sqlcmd = "%s %d," % (sqlcmd,E[ff])
             else:
@@ -642,7 +660,9 @@ class Cenir_DB:
                 raise NameError(msg)
         
         sqlcmd = sqlcmd[:-1]+")"
-            
+        
+        self.log.debug('sql insert line %s', sqlcmd)
+        
         return sqlcmd
     
     def get_sql_serie_insert_cmd(self,E):
