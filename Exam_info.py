@@ -109,6 +109,8 @@ class Exam_info:
             [nu,ii,indu] = np.unique(nda,True,True)
             for k in range(ii.size):
                 self.log.info("annee %d \t%d sujet\t%f heure",nda[ii[k]],len(ndu[indu==k]),np.sum(ndu[indu==k])/60.)
+                
+        
         
         return dicinfo
                  
@@ -200,6 +202,9 @@ class Exam_info:
         if len(p1.PatientsAge)>0:            
             dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
             
+        if "PatientsBirthDate" not in dicinfo:
+            dicinfo["PatientsBirthDate"]="NULL"
+            
         if "PatientsSex" not in p1:
             p1.PatientsSex='Unknown'
         
@@ -207,11 +212,13 @@ class Exam_info:
             dicinfo["PatientsSex"] = p1.PatientsSex
         if "SoftwareVersions" in p1:
             dicinfo["SoftwareVersions"] = p1.SoftwareVersions
+            if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
+                dicinfo["SoftwareVersions"] = p1.SoftwareVersions[2]
         
         dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(dic2))
         dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
         dicinfo["LastSerieDuration"] = dur
-                
+             
         return dicinfo
         
     def deduce_other_info(self,dicinfo):
@@ -354,7 +361,7 @@ class Exam_info:
             makeitshort=False
         
             
-            
+        
         if makeitshort:
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
@@ -373,6 +380,12 @@ class Exam_info:
                
         if 'SequenceName' in p1:
             dicinfo["SeqName"] = p1.SequenceName 
+            
+            #Pas de sequence name dans les sequences IRM de GE
+        if [0x19,0x109c] in p1:
+            dicinfo["SeqName"] = p1[0x19,0x109c].value
+            
+        if 'SequenceName' in p1 or [0x19,0x109c] in p1:
             dicinfo["TR"] =  float(p1.RepetitionTime)
             dicinfo["TE"] = int(p1.EchoTime)
             dicinfo["FA"] = int(p1.FlipAngle)
@@ -382,8 +395,9 @@ class Exam_info:
             dicinfo["dimX"] = int(p1.Rows)
             dicinfo["dimY"] = int(p1.Columns) #do not work for mosaic
             dicinfo["dimZ"] = 0
-        
-            dicinfo["dimPhase"] = int(p1.NumberOfPhaseEncodingSteps)
+
+            if 'NumberOfPhaseEncodingSteps' in p1:
+                dicinfo["dimPhase"] = int(p1.NumberOfPhaseEncodingSteps)
             
             dicinfo["sizeX"] = float(aa[0])
             dicinfo["sizeY"] = float(aa[1])
@@ -420,7 +434,8 @@ class Exam_info:
             dicinfo["sizeY"] = float(aa[1])
             dicinfo["sizeZ"] = float(p1.SliceThickness)
             acquisitionType=p1.SeriesType[0]
-            
+        
+        
             
         else:        #try to find equivalent just in the CSA header (some data missing the elementary dicom field)
             if "SeqType" not in dicinfo : #so this is not a spectro dataset
@@ -485,9 +500,13 @@ class Exam_info:
         if 0x051100e in p1:
              dicinfo["Orient"] = p1[0x051100e].value
 
-
+        
         if meta.has_key('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'):
             dicinfo["Duration"]  = int(meta.get('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'))
+        elif [0x19,0x105a] in p1:
+            
+            dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
+            
         else:
             dicinfo["Duration"] = 0
 #        else:
@@ -751,8 +770,9 @@ class Exam_info:
                 if dicinfo["SeqType"] is 'DWI' :
                     self.write_diff_to_file(nw,o_path)
                 
-                elif "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer") and "EP" in meta.get("ScanningSequence"):  
+                elif "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer") and "ScanningSequence"in meta and "EP" in meta.get("ScanningSequence"):  
                     self.write_diff_to_file(nw,o_path)
+
                 
         return dicinfo
  
