@@ -55,6 +55,7 @@ if __name__ == '__main__':
                 in_dir= c.get_subdir_regex(options.rootdir,[options.proto_reg,options.suj_reg])
     
         
+        
         E = Exam_info.Exam_info(log=log,nifti_dir=options.nifti_dir,dicom_ext = options.dicom_ext,dicom_dir=options.rootdir,
                       send_mail = options.send_mail,send_mail_file = options.send_mail_file ,
                       skip_derived_series = options.skip_derived)
