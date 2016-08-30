@@ -131,7 +131,10 @@ class Exam_info:
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
         dicinfo["MachineName"] = p1.ManufacturersModelName
-        
+	#pour les wip GE changement du machinename !                
+        if "Ox Offline Recon" in dicinfo["MachineName"]:
+            dicinfo["MachineName"]="SIGNA PET/MR"
+
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             if 'StudyDescription' in p1 and len(p1.StudyDescription)>0:
                 dicinfo["ExamName"]= alpha_num_str(p1.StudyDescription)
@@ -376,15 +379,14 @@ class Exam_info:
             self.log.warning('BAD DICOM first file ? %s becaus %s',alldic[0],e)
             dicinfo["corrupt"] = "Bad DICOMextract"
             return dicinfo                            
-        
+
+        #Pas de sequence name dans les sequences IRM de GE
+        if [0x19,0x109c] in p1:
+            dicinfo["SeqName"] = p1[0x19,0x109c].value        
                
         if 'SequenceName' in p1:
             dicinfo["SeqName"] = p1.SequenceName 
-            
-            #Pas de sequence name dans les sequences IRM de GE
-        if [0x19,0x109c] in p1:
-            dicinfo["SeqName"] = p1[0x19,0x109c].value
-            
+                        
         if 'SequenceName' in p1 or [0x19,0x109c] in p1:
             dicinfo["TR"] =  float(p1.RepetitionTime)
             dicinfo["TE"] = int(p1.EchoTime)
