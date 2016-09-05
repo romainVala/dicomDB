@@ -107,6 +107,39 @@ CREATE TABLE IF NOT EXISTS `serie` (
   FOREIGN KEY (`ExamRef`) REFERENCES exam(`Eid`) ON DELETE CASCADE
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 ;
 
+
+DROP TABLE IF EXISTS `gg_examen`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `gg_examen` (
+  `crid` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `eid` varchar(50) NOT NULL DEFAULT '',
+  `rid` int(11) DEFAULT NULL,
+  `PatientsName` varchar(100) DEFAULT NULL,
+  `AcquisitionTime` timestamp NULL DEFAULT NULL,
+  `ExamDuration` int(4) DEFAULT NULL,
+  `PatientsBirthDate` date DEFAULT NULL,
+  `PatientsSex` char(1) NOT NULL DEFAULT 'O',
+  `PatientsWeight` float DEFAULT NULL,
+  `SoftwareVersions` varchar(50) DEFAULT NULL,
+  `FirstSerieName` varchar(50) DEFAULT NULL,
+  `LastSerieName` varchar(50) DEFAULT NULL,
+  `PatientsAge` int(4) DEFAULT NULL,
+  `maj_le` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `relu` tinyint(4) NOT NULL DEFAULT '0',
+  `relu_par` varchar(30) DEFAULT NULL,
+  `relu_anomalie` tinyint(3) DEFAULT NULL,
+  `relu_com` text,
+  `relu_date` date DEFAULT NULL,
+  `relu_courrier_date` date DEFAULT NULL,
+  `relu_courrier_dest` varchar(255) DEFAULT NULL,
+  `grr_entry_id` int(11) DEFAULT NULL,
+  `opid` int(11) unsigned DEFAULT NULL,
+  `facturable` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`crid`)
+) ENGINE=InnoDB AUTO_INCREMENT=19348 DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 -- --------------------------------------------------------
 --
 -- Table structure for table `results_anat`

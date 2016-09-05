@@ -89,6 +89,10 @@ class doit:
 
         parser.add_option("-b","--data_base", action="store_true", dest="do_db",default=False,
                                     help="commit the exam to the cenir database ")
+                                    
+        parser.add_option("-g","--data_base_gg", action="store_true", dest="do_db_gg",default=False,
+                                    help="commit the exam to the GG database ")
+                                    
         parser.add_option("-w","--write-nifti", action="store_true", dest="convert_to_nii",default=False,
                                     help="convert dicom to nifti")
         parser.add_option("-t","--test_data_base", action="store_true", dest="test_db",default=False,

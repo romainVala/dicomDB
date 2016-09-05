@@ -11,7 +11,7 @@ import Exam_info
 import Cenir_DB
 import os
 import sys
-
+import pdb
 if __name__ == '__main__':
     
     doit = do_common.doit()
@@ -54,7 +54,7 @@ if __name__ == '__main__':
             else:
                 in_dir= c.get_subdir_regex(options.rootdir,[options.proto_reg,options.suj_reg])
     
-        
+       
         
         E = Exam_info.Exam_info(log=log,nifti_dir=options.nifti_dir,dicom_ext = options.dicom_ext,dicom_dir=options.rootdir,
                       send_mail = options.send_mail,send_mail_file = options.send_mail_file ,
@@ -65,20 +65,26 @@ if __name__ == '__main__':
         #tri dicom if ask
         if options.tri_dicom:
             in_dir= E.tri_dicom_dir(in_dir,verbose=False,mv_file=options.mv_file)
-    
+        
         #read dicom files
         for onedir in in_dir :
             Ei = E.get_exam_information(onedir,convert_to_nii=options.convert_to_nii,is_dir_level_series=is_series_dir)
         
             if options.find_double :
                 E.find_double_exam(Ei)
-                
+            
+            test=False
+
             if options.test_db :
                 log.info("\n\n**************************\nChecking CENIR data base change on the selected exams (but no change)\n")
-                CDB.update_exam_sql_db(Ei,test=True,do_only_insert=options.do_only_insert)
-            elif options.do_db :
+                test=True
+                
+            if options.do_db :
                 log.info("\nPERFORMING Database update\n")
-                CDB.update_exam_sql_db(Ei,do_only_insert=options.do_only_insert) 
+                CDB.update_exam_sql_db(Ei,test=test,do_only_insert=options.do_only_insert) 
+            if options.do_db_gg :
+                log.info("\nPERFORMING GG Database update\n")
+                CDB.update_exam_sql_db_gg(Ei,test=test,do_only_insert=options.do_only_insert) 
             
         
         log.info('done so enjoy')

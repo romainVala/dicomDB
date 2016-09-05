@@ -33,7 +33,8 @@ class Cenir_DB:
         
         #Pour le cas GE
         self.db_GEexamID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","StudyTime")
-        
+        self.db_field_gg = ("eid","rid","PatientsName","AcquisitionTime","ExamDuration","PatientsBirthDate","PatientsAge","PatientsSex","PatientsWeight",\
+    "SoftwareVersions","FirstSerieName","LastSerieName")
         
         if opt is not None:
             self.db_name = opt.db_name
@@ -127,6 +128,93 @@ class Cenir_DB:
                         
         
         con.close()
+        
+    def update_exam_sql_db_gg(self,Ei,test=False,do_only_insert=False):
+        """
+        input a list of exam dir: get the exam info and submit to the cenir db if the line does not exist
+        or if some parameter has change
+        """
+        
+#        con,cur = self.open_sql_connection_lixum()
+        con,cur = self.open_sql_connection()
+        cur2 = con.cursor()
+#        con = mdb.connect(host = 'mysql.lixium.fr', user = 'cenir', passwd =  'y0p4l4sql', db = 'cenir')
+#        cur = con.cursor(mdb.cursors.DictCursor)
+#        cur2 = con.cursor()
+    
+        sqlcmds = "SELECT * from gg_examen WHERE "
+    
+    
+        for E in Ei:
+            
+
+            
+            sqlcmd = "%s rid = %s AND abs(time_to_sec(AcquisitionTime)-time_to_sec('%s'))<100 AND substr(AcquisitionTime,1,10)=substr('%s',1,10)" % (sqlcmds,E["rid"],E["AcquisitionTime"],E["AcquisitionTime"])
+            
+            #print sqlcmd        
+            cur.execute(sqlcmd)
+            if cur.rowcount == 1 :
+                data = cur.fetchone()
+                #ppoo
+                #check if some field have change
+                dicom_changes=False
+                field_change = []
+                for f in self.db_field_gg:
+                    #print f + "  E : " + str(E[f]) + "   sql : " + str(data[f])
+                    if data[f] != E[f] :
+                        #log.info('field %s differ sdb : %s dic : %s',f,data[f],E[f])
+                        dicom_changes=True
+                        field_change.append(f)
+                        #field_new_value.append(E[f])
+                        #field_old_value.append(data[f])
+                if do_only_insert is False:                    
+                    if dicom_changes:
+                        infostr = "SQL UPDATE of pat=%s : proto=%s : date=%s "%(E['PatientsName'],E['eid'],E['AcquisitionTime'])
+                        #logw.warning("SQL UPDATE of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
+                        infostr += "\n\tFiled change : "
+                        for f in field_change:
+                            
+                            infostr += "\n\t %s : \t %s \t -> \t\t%s" %(f,data[f],E[f])
+                            infostr+='\n\n'
+                            self.log.warning(infostr) 
+                            #logw.warning(infostr) 
+                    
+                        #if test:
+                        cmd_sql = self.get_sql_update_cmd_gg(E,data['crid'])
+                        self.log.info('SQL update will be %s',cmd_sql)
+                        
+                        if test is False :
+                            cur2.execute(cmd_sql)
+                            con.commit()
+                            
+            elif cur.rowcount == 0:
+            
+                self.log.info("SQL INSERT of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
+
+                #check if there is the same subject the same day WHERE `AcquisitionTime` LIKE '2013-08-06%'
+                sqlcmd = "SELECT * from gg_examen WHERE rid = %s AND AcquisitionTime LIKE '%s%%' AND PatientsName='%s'" % (E["rid"],E['AcquisitionTime'].date(),E["PatientsName"])
+                cur.execute(sqlcmd)
+                if cur.rowcount == 1 :
+                    data = cur.fetchone()
+                    difftime = data["AcquisitionTime"]-E['AcquisitionTime']
+                    difftimesecond = difftime.days*86400 + difftime.seconds #si negative il met -1 jour et les second correspondante
+                    self.log.warning("New insert BUT already the same subject the same daye  :  %d second before",difftimesecond)
+            
+                if test is False :
+                    cur2.execute(self.get_sql_insert_cmd_gg(E))
+                    con.commit()
+            else:
+                msg = "ERROR Found more than 1 line for %s " % (sqlcmd)
+                self.log.warning(msg)
+                data = cur.fetchall()
+                rrr = ''
+                for r in data:
+                    rrr = '%s\n\t doublon %s %s/%s %s'%(rrr,r['crid'],r['eid'],r['PatientsName'],r['AcquisitionTime']) 
+                    self.log.warning(rrr)
+                    #raise NameError(msg)
+    
+        con.close()
+                        
     def find_sql_doublon(self):
         #self.remove_lixium_duplicate_exam()
         #self.check_dicom_remove()        
@@ -596,8 +684,11 @@ class Cenir_DB:
                 
         sqlcmd = "UPDATE exam SET "
         for ff in self.db_exam_field :
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime :
-                sqlcmd = "%s %s='%s'," % (sqlcmd,ff,E[ff])
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+                if E[ff]=="NULL":
+                    sqlcmd="%s %s=%s," % (sqlcmd,ff,E[ff])
+                else:
+                    sqlcmd = "%s %s='%s'," % (sqlcmd,ff,E[ff])
             elif type(E[ff]) is int or type(E[ff]) is float:
                 sqlcmd = "%s %s=%d," % (sqlcmd,ff,E[ff])
             else:
@@ -607,7 +698,28 @@ class Cenir_DB:
         sqlcmd = sqlcmd[:-1] + " WHERE MachineName = '%s' AND AcquisitionTime = '%s' " % (E["MachineName"],E["AcquisitionTime"])
     
         return sqlcmd
-
+    
+    def get_sql_update_cmd_gg(self,E,crid):
+    
+            
+        sqlcmd = "UPDATE gg_examen SET "
+        for ff in self.db_field_gg:
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+                if E[ff]=="NULL":
+                    sqlcmd="%s %s=%s," % (sqlcmd,ff,E[ff])
+                else:
+                    sqlcmd = "%s %s='%s'," % (sqlcmd,ff,E[ff])
+            elif type(E[ff]) is int or type(E[ff]) is float:
+                sqlcmd = "%s %s=%d," % (sqlcmd,ff,E[ff])
+        
+            else:
+                msg = "ERROR How to write field %s with %s" % (ff,type(E[ff]))
+                raise NameError(msg)
+    
+        #sqlcmd = sqlcmd[:-1] + " WHERE rid = %s AND AcquisitionTime = '%s' " % (E["rid"],E["AcquisitionTime"])
+        sqlcmd = sqlcmd[:-1] + " WHERE crid = %s " % (crid)
+        return sqlcmd    
+    
     def update_Exam_duration_from_sql(self,eid,con,cur):
         from math import ceil
         #TENSOR series have an AcqTime to None and a Duration=0, so skip thoses serie in the sql query
@@ -660,6 +772,30 @@ class Cenir_DB:
         
         self.log.debug('sql insert line %s', sqlcmd)
         
+        return sqlcmd
+        
+    def get_sql_insert_cmd_gg(self,E):
+
+        sqlcmd = "INSERT INTO gg_examen ("
+        for ff in self.db_field_gg:
+            sqlcmd = "%s %s," % (sqlcmd,ff)       
+    
+        sqlcmd = sqlcmd[:-1]+") VALUES("
+    
+        for ff in self.db_field_gg:
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+                if E[ff]=="NULL":
+                    sqlcmd="%s %s," % (sqlcmd,E[ff])
+                else:
+                    sqlcmd = "%s '%s'," % (sqlcmd,E[ff])
+            elif type(E[ff]) is int or type(E[ff]) is float:
+                    sqlcmd = "%s %d," % (sqlcmd,E[ff])
+            else:
+                msg = "ERROR How to write field %s with %s" % (ff,type(E[ff]))
+                raise NameError(msg)
+    
+        sqlcmd = sqlcmd[:-1]+")"
+    
         return sqlcmd
     
     def get_sql_serie_insert_cmd(self,E):
