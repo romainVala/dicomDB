@@ -605,7 +605,9 @@ class Cenir_DB:
                 raise NameError(msg)
         
         sqlcmd = sqlcmd[:-1] + " WHERE MachineName = '%s' AND AcquisitionTime = '%s' " % (E["MachineName"],E["AcquisitionTime"])
-    
+        
+        self.log.debug('SQL update is %s',sqlcmd)
+
         return sqlcmd
 
     def update_Exam_duration_from_sql(self,eid,con,cur):
