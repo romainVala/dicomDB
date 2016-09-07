@@ -130,6 +130,7 @@ class Exam_info:
         dicinfo["ExamNum"] = int(p1.StudyID)
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
+        
         dicinfo["MachineName"] = p1.ManufacturersModelName
 	#pour les wip GE changement du machinename !                
         if "Ox Offline Recon" in dicinfo["MachineName"]:
@@ -138,15 +139,18 @@ class Exam_info:
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             if 'StudyDescription' in p1 and len(p1.StudyDescription)>0:
                 dicinfo["ExamName"]= alpha_num_str(p1.StudyDescription)
+                dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
             elif 'ProtocolName' in p1 and len(p1.ProtocolName)>0 and p1.ProtocolName!= ' ':
                 dicinfo["ExamName"]= alpha_num_str(p1.ProtocolName)
             else:
                 
                 dicinfo["ExamName"]="Atrier"
-                
+        
         elif len(p1.StudyDescription)>0:
             dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
-            
+            dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
+        
+        
         dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
         
         #appen date to SacisitionTime and format time
@@ -170,9 +174,13 @@ class Exam_info:
         
         first_ser = nn[0]
         last_ser = nn[-1]
+        
         if "Duration" in last_ser: 
             last_dur = last_ser["Duration"]
             if last_dur>0:
+                dur= last_ser["AcqTime"] - first_ser["AcqTime"]
+                dicinfo["ExamDuration"] = int(math.ceil((dur.seconds + last_dur)/60.))
+            elif 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
                 dur= last_ser["AcqTime"] - first_ser["AcqTime"]
                 dicinfo["ExamDuration"] = int(math.ceil((dur.seconds + last_dur)/60.))
             else:
@@ -182,7 +190,9 @@ class Exam_info:
             self.log.error("last serie %s has no duration set (duration old way)" ,last_ser['SName'])
             p2=dicom.read_file(dic2,stop_before_pixels=True)        
             if p2.has_key(0x051100a):
-                dur = self.get_series_duration_from_siemens_tag(p2[0x051100a].value)            
+                dur = self.get_series_duration_from_siemens_tag(p2[0x051100a].value)    
+            elif [0x19,0x105a] in p2:
+                dur= p2[0x19,0x105a].value/1000000
             else:
                 dur = self.get_series_duration_from_file(dic2)
             
@@ -221,7 +231,31 @@ class Exam_info:
         dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(dic2))
         dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
         dicinfo["LastSerieDuration"] = dur
-             
+        
+        if p1.ManufacturersModelName.startswith("Verio"):
+            dicinfo["rid"] = 19        
+    
+        elif p1.ManufacturersModelName.startswith("TrioTim"):
+            dicinfo["rid"] = 1
+    
+        elif p1.ManufacturersModelName.startswith("Prisma_fit"):
+            dicinfo["rid"] = 1   
+            
+        elif "MachineName" in dicinfo and dicinfo["MachineName"].startswith("SIGNA"):
+            dicinfo["rid"] = 29  
+        else:
+            raise NameError('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
+        
+        if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
+            dicinfo["eid"] = dicinfo["StudyDescription"][6:]
+            dicinfo["facturable"]=1
+        elif  dicinfo["StudyDescription"].startswith("PRISMA_") :
+            dicinfo["eid"] = dicinfo["StudyDescription"][7:]
+            dicinfo["facturable"]=1
+        else:
+            dicinfo["eid"] = dicinfo["StudyDescription"]
+            dicinfo["facturable"]=0
+          
         return dicinfo
         
     def deduce_other_info(self,dicinfo):
@@ -516,7 +550,10 @@ class Exam_info:
 #                dicinfo["Duration"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
         if p1.has_key(0x051100a):
             dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
+        
+        if [0x19,0x105a] in p1:
             
+            dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
         
         if meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
