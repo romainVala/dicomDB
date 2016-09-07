@@ -1008,6 +1008,8 @@ class Exam_info:
             meta["SeriesDescription"] = 'nodescription'
             
         ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
+        if "P" in meta["ImageType"]:
+            ser = ser + '_phase'
         
         return(exa,suj,ser)
         
