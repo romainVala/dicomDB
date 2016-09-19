@@ -226,7 +226,7 @@ class Exam_info:
         if "SoftwareVersions" in p1:
             dicinfo["SoftwareVersions"] = p1.SoftwareVersions
             if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
-                dicinfo["SoftwareVersions"] = p1.SoftwareVersions[2]
+                dicinfo["SoftwareVersions"] = p1.SoftwareVersions[-1]
         
         dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(dic2))
         dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
@@ -1045,7 +1045,7 @@ class Exam_info:
             meta["SeriesDescription"] = 'nodescription'
             
         ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
-        if "P" in meta["ImageType"]:
+        if "ImageType" in meta and "P" in meta["ImageType"]:
             ser = ser + '_phase'
         
         return(exa,suj,ser)
