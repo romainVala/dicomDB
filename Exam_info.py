@@ -130,7 +130,10 @@ class Exam_info:
         dicinfo["ExamNum"] = int(p1.StudyID)
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
-        
+        if 'ManufacturersModelName' not in p1:
+	    if 'Manufacturer' in p1:
+		p1.ManufacturersModelName = p1.Manufacturer
+	  
         dicinfo["MachineName"] = p1.ManufacturersModelName
 	#pour les wip GE changement du machinename !                
         if "Ox Offline Recon" in dicinfo["MachineName"]:
@@ -211,9 +214,12 @@ class Exam_info:
         dstr = p1.PatientsBirthDate
         if len(p1.PatientBirthDate)>0:
             dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
-            
-        if len(p1.PatientsAge)>0:            
-            dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
+        
+	if 'PatientsAge' not in p1:
+    	    dicinfo["PatientsAge"] = "NULL"
+	else:
+            if len(p1.PatientsAge)>0:            
+                dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
             
         if "PatientsBirthDate" not in dicinfo:
             dicinfo["PatientsBirthDate"]="NULL"
@@ -243,6 +249,9 @@ class Exam_info:
             
         elif "MachineName" in dicinfo and dicinfo["MachineName"].startswith("SIGNA"):
             dicinfo["rid"] = 29  
+        elif "MachineName" in dicinfo and dicinfo["MachineName"].startswith("Bruker"):
+            dicinfo["rid"] = 39
+
         else:
             raise NameError('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
         
@@ -811,7 +820,8 @@ class Exam_info:
                 
                 elif "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer") and "ScanningSequence"in meta and "EP" in meta.get("ScanningSequence"):  
                     self.write_diff_to_file(nw,o_path)
-
+		elif "Manufacturer" in meta and  "Bruker" in meta.get("Manufacturer") and "MRDiffusionSequence" in meta:
+		    self.write_diff_to_file(nw,o_path)
                 
         return dicinfo
  
@@ -962,10 +972,20 @@ class Exam_info:
             del nw1
             
         if convert_nii:
-            nii.to_filename(out_path)
-            self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
-            #self.log.info('convert_niiii is %s stack is %d',convert_nii,stack_num)
-            
+            try:
+		nii.to_filename(out_path)
+            	self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
+
+	    #except IOError as (errno, strerror):
+    	#	print "I/O error({0}): {1}".format(errno, strerror)
+	#	self.log.info('convert_niiii is %s stack is %d',convert_nii,stack_num)
+	#    except ValueError:
+	#    	print "Could not convert data to an integer."
+	#	self.log.info('convert_niiii is %s stack is %d',convert_nii,stack_num)
+	    except:
+	        #print "Unexpected error:", sys.exc_info()[0]
+		self.log.error('convert_niiii is %s stack is %d',convert_nii,stack_num)
+
             nii_wrp = NiftiWrapper(nii)
             path_tokens = out_path.split('.')
             if path_tokens[-1] == 'gz':
@@ -1062,21 +1082,23 @@ class Exam_info:
                     diffinfos=nw.get_meta("Diffusioninfos",(0,0,0,ind))
                     diffdir=diffinfos[0:3]
                     bvaltmp=diffinfos[3]
-                else:
-                
-            
+		    bval.append(bvaltmp)
+
+		elif 'Bruker' in nw.get_meta("Manufacturer"):
+		    diffall = nw.get_meta("MRDiffusionSequence",(0,0,0,ind))
+		    diffdir = diffall[0]["DiffusionGradientDirectionSequence"][0]["DiffusionGradientOrientation"]
+                    bvaltmp = diffall[0]["DiffusionBValue"]
+		    bval.append(bvaltmp)
+
+                else:                            
                     diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
+		    bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
+
             
                 if diffdir is None:
                     diffdir =  [0, 0, 0] 
                 bvec.append( diffdir )
-                
-                if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
-                    
-                    bval.append(bvaltmp)
-                else:
-            
-                    bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
+                               
         
         bv = np.matrix(bvec)
         bval = np.array(bval,ndmin=2).T #bval.reshape((bval.size,1))
@@ -1084,22 +1106,36 @@ class Exam_info:
         mat=mat[0:3,0:3]
         vox = np.sqrt(np.diag(np.dot(mat.T,mat)))
         mivox =  np.matrix((np.identity(3) * vox)).I
-        rot = np.dot(mat,mivox)
-        #I do not know why I have to change some sign ... (deduce from try and test)        
-        rot = np.dot(np.diag([-1, -1 ,1]),rot)
+        rotnii = np.dot(mat,mivox)
+        #I do not know why I have to change some sign ... (deduce from try and test)      
+	if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):  
+	    rot = rotnii
+	else:
+	    rot = np.dot(np.diag([-1, -1 ,1]),rotnii)
+	
+	#dicom orientation	
+	patorient = nw.get_meta('ImageOrientationPatient')	
+	patorient = np.reshape(patorient, (2, 3)).T
+	rotations = np.eye(3)
+	rotations[:, :2] = patorient
+	# Third direction cosine from cross-product of first two
+	# TODO it may not always be the cross-product ... genral case should look at each slices
+	rotations[:, 2] = np.cross(patorient[:, 0], patorient[:, 1])
+	#rotations = np.dot(rotnii,rotations) ca marche pas !!! pour GE il manque -1 sur x et pour siemens -1 sur y arggg
 
         bvecnew = np.dot(bv,rot)
+	bvecnew_dic = np.dot(bv,rotations)
         out_path = os.path.join(dest_dir, 'diffusion_dir.bvecs')        
+        out_path_dic = os.path.join(dest_dir, 'diffusion_dir.dicom_vec')        
         if os.path.isfile(out_path) :
             self.log.info('Skiping writting diffusion dir, because exist')
         else:
             np.savetxt(out_path,np.array(bvecnew).T,'%1.5f',' ')
+            np.savetxt(out_path_dic,np.array(bvecnew_dic).T,'%1.5f',' ')
             out_path = os.path.join(dest_dir, 'diffusion_dir.bvals')
             np.savetxt(out_path,np.array(bval).T,'%d')
             out_path = os.path.join(dest_dir, 'diffusion_dir.txt')
             np.savetxt(out_path,np.concatenate((bval,bv),axis=1),'%1.5f')
-#    vox = sqrt(diag(mat'*mat));  e=eye(3) ;e(1,1)=vox(1);e(2,2)=vox(2);e(3,3)=vox(3);
-#    rot = mat/e;
 
     def get_first_dicom_file(self,ser,first):
         
