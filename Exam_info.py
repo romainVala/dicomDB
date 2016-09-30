@@ -433,7 +433,7 @@ class Exam_info:
         if 'SequenceName' in p1 or [0x19,0x109c] in p1:
             dicinfo["TR"] =  float(p1.RepetitionTime)
 	    te = p1.EchoTime
-	    if len(te) is 0:
+	    if not te : #len(te) is 0:
 		dicinfo["TE"] = 0
 	    else:	
 	        dicinfo["TE"] = int(p1.EchoTime)
