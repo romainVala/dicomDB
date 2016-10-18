@@ -239,7 +239,7 @@ def alpha_num_str(stri):
         return stri
         
     if type(stri) is not unicode:
-        stri = extract.make_unicode(stri)
+        stri = make_unicode(stri)
     
 #    if type(stri) is str:
 #        stri=stri.replace('\xe9','e')
@@ -259,7 +259,7 @@ def alpha_num_str(stri):
     #correspond au caractere a chapeau
     stri=stri.replace(u'\xe2','a')
     #correspond au caractere a chapeau
-    stri=stri.replace( extract.make_unicode('/'), '_')
+    stri=stri.replace(make_unicode('/'), '_')
     #convert to string and ignore other strange caractere
     stri=stri.encode('utf-8').decode('ascii','ignore')
     stri = str(stri)
@@ -287,7 +287,7 @@ def alpha_num_str_min(stri):
 #    import re
     
     if type(stri) is not unicode:
-        stri = extract.make_unicode(stri)
+        stri = make_unicode(stri)
     
 #    if type(stri) is str:
 #        stri=stri.replace('\xe9','e')
@@ -323,6 +323,20 @@ def alpha_num_str_min(stri):
     
     
     return stri 
+
+def make_unicode(in_str):
+    '''Try to convetrt in_str to unicode'''
+    for encoding in ('utf8', 'latin1'):
+        try:
+            result = unicode(in_str, encoding=encoding)
+        except UnicodeDecodeError:
+            pass
+        else:
+            break
+    else:
+        raise ValueError("Unable to determine string encoding: %s" % in_str)
+    return result
+    
 
 #plu efficace
 #def sanitize_path_comp(path_comp):
