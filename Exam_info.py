@@ -253,7 +253,8 @@ class Exam_info:
             dicinfo["rid"] = 39
 
         else:
-            raise NameError('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
+            #raise NameError('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
+            self.log.warning('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
         
         if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
             dicinfo["eid"] = dicinfo["StudyDescription"][6:]
@@ -408,7 +409,7 @@ class Exam_info:
         
             
         
-        if makeitshort:
+        if makeitshort and self.skip_derived_series :
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
             return dicinfo
