@@ -563,8 +563,11 @@ class Exam_info:
 #            if p1.has_key(0x051100a):
 #                dicinfo["Duration"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
         if p1.has_key(0x051100a):
-            dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
-        
+            try:
+                
+                dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
+            except: 
+                pass
         if [0x19,0x105a] in p1:
             
             dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
@@ -766,6 +769,7 @@ class Exam_info:
 #                self.log.warning("INVALIDE STACK could not add volume %s because %s ",vol[2],detail)
 
             try:
+                #all_stack.append(my_stack.to_nifti(voxel_order='', embed_meta=True))
                 all_stack.append(my_stack.to_nifti(voxel_order='LAS', embed_meta=True))
 #how to make it basic this doeas not works                all_stack.append(my_stack.to_nifti(voxel_order='', embed_meta=True))
             
@@ -1119,7 +1123,13 @@ class Exam_info:
 	    rot = np.dot(np.diag([-1, -1 ,1]),rotnii)
 	
 	#dicom orientation	
-	patorient = nw.get_meta('ImageOrientationPatient')	
+ 
+	patorient = nw.get_meta('ImageOrientationPatient')
+     # For GE Oblique sequence more than one ImageOrientation (but all very close)     
+	if patorient is None:
+         patorient = nw.get_meta('ImageOrientationPatient',(0,0,0,0))
+      
+
 	patorient = np.reshape(patorient, (2, 3)).T
 	rotations = np.eye(3)
 	rotations[:, :2] = patorient
@@ -1127,8 +1137,13 @@ class Exam_info:
 	# TODO it may not always be the cross-product ... genral case should look at each slices
 	rotations[:, 2] = np.cross(patorient[:, 0], patorient[:, 1])
 	#rotations = np.dot(rotnii,rotations) ca marche pas !!! pour GE il manque -1 sur x et pour siemens -1 sur y arggg
+         #pour GE ne pas appliquer la rotation aux bvecs car deja dans le repere de la boite
+        if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
+            bvecnew=bvec
+        else:
+            bvecnew = np.dot(bv,rot)
 
-        bvecnew = np.dot(bv,rot)
+        
 	bvecnew_dic = np.dot(bv,rotations)
         out_path = os.path.join(dest_dir, 'diffusion_dir.bvecs')        
         out_path_dic = os.path.join(dest_dir, 'diffusion_dir.dicom_vec')        
@@ -1480,9 +1495,9 @@ class Exam_info:
             if nb_of_dic_file>0:
                 self.log.info('Reading %d file in %s',len(alldic),dir_path)                                
 #                self.log.info('MEM2 %0.0f M ',p.get_memory_info().rss/1024/1024)
+                #We got rid of the 'ProtocolName' in group_keys for the formation of stacks as it created problems with GE files
+                group_keys =  ('SeriesInstanceUID','SeriesNumber')
                 
-                group_keys =  ('SeriesInstanceUID','SeriesNumber','ProtocolName')
-            
                 pg,dicom_file_size,n_ommited  = self.get_group_stack_from_dic(alldic,group_keys=group_keys)
                 
 #                self.log.info('MEM3 %0.0f M ',p.get_memory_info().rss/1024/1024)
@@ -1491,7 +1506,6 @@ class Exam_info:
                     vol = v[0]
                     (exa,suj,ser) = self.get_exam_suj_ser_from_dicom_meta(vol[1])
                     dest_dir = os.path.join(self.dicom_dir,exa,suj,ser)
-                    
                     if os.path.isdir(dest_dir):
                         dest_dir =  os.path.join(self.dicom_doublon,exa,suj,ser)
                         
@@ -1535,26 +1549,29 @@ class Exam_info:
                                 # Mettre l'arborescence correspondant au fichier LIST (PESI/pXX/eXX/sXX/GEMS PET LSTDC pour pouvoir les remettres sur la machine)        
                                 path=os.path.dirname(fout)
                                 fin2=fin[fin.rfind('PESI'):]
-                                try:
-                                    
-                                    flist=vol[0][0x09,0x10da].value
-                                except:
-                                    pass
-                                flistin=fin[:fin.rfind('PESI')]+flist
-                                
                                 fout=os.path.join(path,fin2)
-                                foutlist=path+flist
                                 dirGEMS=os.path.dirname(fout)
                                 
                                 if not os.path.isdir(dirGEMS):
                                     os.makedirs(dirGEMS)
+                                try:
                                     
-                                if not os.path.isfile(foutlist):
-                                    dirlist=os.path.dirname(foutlist)
-                                    os.makedirs(dirlist)
-                                    shutil.copy2(flistin,foutlist)
+                                    flist=vol[0][0x09,0x10da].value
+                                
+                                    flistin=fin[:fin.rfind('PESI')]+flist
+                                
+                                
+                                    foutlist=path+flist
+                                    
+                                    
+                                    if not os.path.isfile(foutlist):
+                                        dirlist=os.path.dirname(foutlist)
+                                        os.makedirs(dirlist)
+                                        shutil.copy2(flistin,foutlist)
+                                except:
+                                    print 'Tried to copy PETlistfile without success'
                         except:
-                            print 'Tried to copy PETlistfile without success'
+                            pass
                             
                         
                         shutil.copy2(fin,fout)
