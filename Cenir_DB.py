@@ -11,8 +11,8 @@ def add_options(parser):
                                 help="find sql doublon base on the sql database ")
     parser.add_option("--db_name", action ="store",dest="db_name",default='cenir',
                               help="Name of the database default cenir")
-    parser.add_option("--db_host", action ="store",dest="db_host",default='10.5.90.15',
-                              help="hostname of the database default 10.5.90.15")
+    parser.add_option("--db_host", action ="store",dest="db_host",default='10.5.9.213',
+                              help="hostname of the database default 10.5.9.213")
                               
                               
                               
