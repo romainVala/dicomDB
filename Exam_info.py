@@ -558,8 +558,11 @@ class Exam_info:
 #            if p1.has_key(0x051100a):
 #                dicinfo["Duration"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
         if p1.has_key(0x051100a):
-            dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
-        
+            try:
+                
+                dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
+            except: 
+                pass
         if [0x19,0x105a] in p1:
             
             dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
@@ -1561,9 +1564,9 @@ class Exam_info:
                                         os.makedirs(dirlist)
                                         shutil.copy2(flistin,foutlist)
                                 except:
-                                    pass
+                                    print 'Tried to copy PETlistfile without success'
                         except:
-                            print 'Tried to copy PETlistfile without success'
+                            pass
                             
                         
                         shutil.copy2(fin,fout)

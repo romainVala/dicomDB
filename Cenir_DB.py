@@ -136,7 +136,7 @@ class Cenir_DB:
         """
         
 #        con,cur = self.open_sql_connection_lixum()
-        con,cur = self.open_sql_connection()
+        con,cur = self.open_sql_connection_lixum()
         cur2 = con.cursor()
 #        con = mdb.connect(host = 'mysql.lixium.fr', user = 'cenir', passwd =  'y0p4l4sql', db = 'cenir')
 #        cur = con.cursor(mdb.cursors.DictCursor)
