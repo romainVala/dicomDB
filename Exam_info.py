@@ -1265,7 +1265,9 @@ class Exam_info:
                 if i>ilast:
                     ilast = i
                     last_file = vol[2]
-        
+        if ilast==ifirst:
+            last_file = first_file
+            
         nb_slice= dicinfo["_nb_slice"]
         nb_vol  = dicinfo["_nb_vol"]
         nb_file = dicinfo["_nb_file"]
