@@ -157,7 +157,11 @@ class Exam_info:
         dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
         
         #appen date to SacisitionTime and format time
-        dstr = p1.AcquisitionDate
+        if 'AcquisitionDate' in p1:
+        	dstr = p1.AcquisitionDate
+        else :
+        	dstr = p1.StudyDate
+        	
         tstr = p1.AcquisitionTime
         #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
@@ -496,19 +500,20 @@ class Exam_info:
                 dicinfo["TR"] =  float( meta.get('CsaImage.RepetitionTime'))
                 dicinfo["TE"] = float(  meta.get('CsaImage.EchoTime'))
                 dicinfo["FA"] = float( meta.get('CsaImage.FlipAngle'))
-                dicinfo["PixelBw"] = int(meta.get('CsaImage.PixelBandwidth'))
-            
-                dicinfo["dimX"] = int(meta.get('CsaImage.Rows'))
-                dicinfo["dimY"] = int(meta.get('CsaImage.Columns'))
-                if 'CsaImage.ProtocolSliceNumber' in meta:
-                    dicinfo["dimZ"] = int(meta.get('CsaImage.ProtocolSliceNumber'))
+                if 'CsaImage.PixelBandwidth' in meta :
+                    dicinfo["PixelBw"] = int(meta.get('CsaImage.PixelBandwidth'))
+
+                    dicinfo["dimX"] = int(meta.get('CsaImage.Rows'))
+                    dicinfo["dimY"] = int(meta.get('CsaImage.Columns'))
+                    if 'CsaImage.ProtocolSliceNumber' in meta:
+                        dicinfo["dimZ"] = int(meta.get('CsaImage.ProtocolSliceNumber'))
         
-                dicinfo["dimPhase"] = int(meta.get('CsaImage.NumberOfPhaseEncodingSteps'))
+                    dicinfo["dimPhase"] = int(meta.get('CsaImage.NumberOfPhaseEncodingSteps'))
             
-                aa=meta.get( 'CsaImage.PixelSpacing')
-                dicinfo["sizeX"] = float(aa[0])
-                dicinfo["sizeY"] = float(aa[1])
-                dicinfo["sizeZ"] = float( meta.get('CsaImage.SliceThickness'))
+                    aa=meta.get( 'CsaImage.PixelSpacing')
+                    dicinfo["sizeX"] = float(aa[0])
+                    dicinfo["sizeY"] = float(aa[1])
+                    dicinfo["sizeZ"] = float( meta.get('CsaImage.SliceThickness'))
 
             #no slicespacing in meta so compute from slice position   
                 if 'CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].sPosition.dTra' in meta and \
@@ -527,8 +532,9 @@ class Exam_info:
                     dicinfo["SliceGap"] = gap
             
                 dicinfo["PhaseDir"] =meta.get('CsaImage.PhaseEncodingDirection')
-                dicinfo["Affine"] = my_list_to_str(meta.get('CsaImage.ImageOrientationPatient'))
-                dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(meta.get('CsaImage.ImagePositionPatient'))
+                if 'CsaImage.ImageOrientationPatient' in meta:
+                    dicinfo["Affine"] = my_list_to_str(meta.get('CsaImage.ImageOrientationPatient'))
+                    dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(meta.get('CsaImage.ImagePositionPatient'))
                 
                 if 'CsaImage.ScanningSequence' in meta:
                     scan_seq = my_list_to_str(meta.get('CsaImage.ScanningSequence')) 
@@ -539,6 +545,8 @@ class Exam_info:
             
             if meta.has_key('ScanningSequence'):
                 scan_seq = my_list_to_str(meta.get('ScanningSequence'))
+            else :
+            	scan_seq = ''
                        
             
             if meta.has_key('MRAcquisitionType'):
