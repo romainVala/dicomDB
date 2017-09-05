@@ -29,7 +29,7 @@ class Cenir_DB:
         self.db_exam_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","ExamDuration","PatientsBirthDate","PatientsAge",\
         "PatientsSex","PatientsWeight","SoftwareVersions","FirstSerieName","LastSerieName","dicom_dir")
         self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
-        "PatientsSex","PatientsWeight","SoftwareVersions")
+        "PatientsSex","PatientsWeight","SoftwareVersions","dicom_dir")
         
         #Pour le cas GE
         self.db_GEexamID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","StudyTime")
@@ -376,6 +376,7 @@ class Cenir_DB:
         con,cur = self.open_sql_connection()
         import common as c 
          
+        
         #pour voir les exam partiellement duplique (quelque series)
              # select count(*), Eid, dicom_dir,dicom_sdir , SName from ExamSerie group by SNumber, AcqTime, MachineName having count(*)>1;
 
@@ -395,6 +396,7 @@ class Cenir_DB:
             f2=open('./remove_exam_doublon_dicom_raw.sh', 'w+')
             f3=open('./remove_exam_doublon_AC.sh', 'w+')
             f4 = open('./remove_exam_sql','w+')
+            f5 = open('./reimport_exam','w+')
             
             self.log.info('%d exam doublons',len(rows))
             for row in rows:
@@ -410,7 +412,7 @@ class Cenir_DB:
                     # if modification time from directories it may not work ... 
                     #timedir.append(os.path.getmtime(serdir[0]))
                     #timedir.append(drow['EUID']) do not work
-                    serdir = c.get_subdir_regex(drow['dicom_dir'],'^S01');
+                    serdir = c.get_subdir_regex(drow['dicom_dir'],'^S01')
                     files = c.get_subdir_regex_files(serdir[0],'.*dic')                    
                     timedir.append(os.path.getmtime(files[0]))
                     
@@ -419,6 +421,7 @@ class Cenir_DB:
                 if drows[0]['dicom_dir'] == drows[1]['dicom_dir']:
                     strinfo += '\nWARNING SAME DICOM DIR Please reimport'
                     self.log.info(strinfo)
+                    f5.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[0]['dicom_dir']))
                     continue
     
                 sind = sorted(range(len(timedir)), key=timedir.__getitem__)
@@ -489,6 +492,18 @@ class Cenir_DB:
             f3.close()
             f4.close()
             
+            #remove empty exam line
+            self.log.info("loking at empty exam ")
+            f5 = open('./remove_empty_exam_sql','w+')
+            
+            sqlcmd = "select exam.Eid from exam left outer join serie on (exam.Eid = serie.ExamRef ) where serie.ExamRef is null;"
+            cur.execute(sqlcmd)
+            rows = cur.fetchall()
+            for row in rows:
+                f5.write("delete from exam where Eid='%s' ;\n"%(row['Eid']))
+            f5.close()
+                
+
         con.close()
 
     def remove_duplicate_exam_correct(self):
