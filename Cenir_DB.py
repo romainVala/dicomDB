@@ -30,6 +30,8 @@ class Cenir_DB:
         "PatientsSex","PatientsWeight","SoftwareVersions","FirstSerieName","LastSerieName","dicom_dir")
         self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
         "PatientsSex","PatientsWeight","SoftwareVersions","dicom_dir")
+#        self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
+#        "PatientsSex","PatientsWeight","SoftwareVersions")
         
         #Pour le cas GE
         self.db_GEexamID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","StudyTime")
@@ -412,7 +414,9 @@ class Cenir_DB:
                     # if modification time from directories it may not work ... 
                     #timedir.append(os.path.getmtime(serdir[0]))
                     #timedir.append(drow['EUID']) do not work
-                    serdir = c.get_subdir_regex(drow['dicom_dir'],'^S01')
+                    serdir = c.get_subdir_regex(drow['dicom_dir'],'^S')
+                    if not serdir:
+                        self.log.error('Eid %s Pat %s dic %s',drow['Eid'],drow['PatientsName'],drow['dicom_dir'])
                     files = c.get_subdir_regex_files(serdir[0],'.*dic')                    
                     timedir.append(os.path.getmtime(files[0]))
                     
@@ -434,57 +438,70 @@ class Cenir_DB:
                 sqlcmd = "select count(*) as nbs , sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
                 cur.execute(sqlcmd)
                 serok = cur.fetchone()
-    
-                if serok['nbd'] == serbad['nbd']:
-                    strinfo+='\nsame number of dicom files'
-                else :
-                    strinfo+='\nWARNING different number of dicom files'
-                    strinfo+='\n  the bad has %d files'%(serbad['nbd'])
-                    strinfo+='\n  the ok  has %d files'%(serok['nbd'])
                 
-                for ind in sind[:-1]:
-                    dicdir = drows[ind]['dicom_dir']
-                    pp,suj = os.path.split(dicdir)
-                    pp,prot = os.path.split(pp)
-                    strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
-    
-                    #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
-                    f11.write(('cd /export/dataCENIR/dicom/dicom_raw/;cd %s; mv %s /export/dataCENIR/dicom/doublon_dicom/\n'%(prot,suj)))
-                    f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
-                    f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
-                    
-                    strinfo+= "\ndelete from exam where Eid='%s' " % (drows[ind]['Eid'])
-    
-                    sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[ind]['Eid'])
-                    cur.execute(sqlcmd)
-                    serbad = cur.fetchone()
-                    if serbad['nifti_dir'] is None:
-                        niftidir = None
-                    else:
-                        niftidir = os.path.dirname(serbad['nifti_dir'] )
+                do_move=True
+                
+                if serok['nbs'] == serbad['nbs']:
+                    strinfo+='\same number of series'
+                    if serok['nbd'] == serbad['nbd']:
+                        strinfo+='\nsame number of dicom files'
+                    else :
+                        strinfo+='\nWARNING different number of dicom files'
+                        strinfo+='\n  the bad has %d files'%(serbad['nbd'])
+                        strinfo+='\n  the ok  has %d files'%(serok['nbd'])
+                        do_move=False
+                else:
+                    strinfo+='\nWARNING different number of SERIES '
+                    strinfo+='\n  the bad has %d series'%(serbad['nbs'])
+                    strinfo+='\n  the ok  has %d series'%(serok['nbs'])
+                    do_move=False
+                
+                if do_move:
+                    for ind in sind[:-1]:
+                        dicdir = drows[ind]['dicom_dir']
+                        pp,suj = os.path.split(dicdir)
+                        pp,prot = os.path.split(pp)
+                        strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
+        
+                        #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
+                        f11.write(('cd /export/dataCENIR/dicom/dicom_raw/;cd %s; mv %s /export/dataCENIR/dicom/doublon_dicom/\n'%(prot,suj)))
+                        f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
+                        f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
                         
-                        sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
+                        strinfo+= "\ndelete from exam where Eid='%s' " % (drows[ind]['Eid'])
+        
+                        sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[ind]['Eid'])
                         cur.execute(sqlcmd)
-                        serok = cur.fetchone()
-                        if serok['nifti_dir'] != None:
-                            niftidir_ok = os.path.dirname(serok['nifti_dir'] )                                               
+                        serbad = cur.fetchone()
+                        if serbad['nifti_dir'] is None:
+                            niftidir = None
+                        else:
+                            niftidir = os.path.dirname(serbad['nifti_dir'] )
                             
-                            pp,suj = os.path.split(niftidir)
-                            pp,prot = os.path.split(pp)
-                            pp='/export/dataCENIR/dicom/nifti_raw'
-                            if niftidir_ok == niftidir:
-                                strinfo += "\nSTRANGE different dicom dir lead to the same nifti dir %s : do not delete"%(niftidir)
-                            else :                
-                                strinfo += "\ncd %s; cd %s; rm -rf %s" % (pp,prot,suj)
-                                f1.write(('cd %s;cd %s; rm -rf %s\n'%(pp,prot,suj)))
-                                f2.write(('cd /nasDicom/spm_raw/;cd %s; rm -rf  %s \n'%(prot,suj)))
-    
-                    
-                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[ind]['Eid'])
-                    f4.write(sqlcmd)
+                            sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
+                            cur.execute(sqlcmd)
+                            serok = cur.fetchone()
+                            if serok['nifti_dir'] != None:
+                                niftidir_ok = os.path.dirname(serok['nifti_dir'] )                                               
+                                
+                                pp,suj = os.path.split(niftidir)
+                                pp,prot = os.path.split(pp)
+                                pp='/export/dataCENIR/dicom/nifti_raw'
+                                if niftidir_ok == niftidir:
+                                    strinfo += "\nSTRANGE different dicom dir lead to the same nifti dir %s : do not delete"%(niftidir)
+                                else :                
+                                    strinfo += "\ncd %s; cd %s; rm -rf %s" % (pp,prot,suj)
+                                    f1.write(('cd %s;cd %s; rm -rf %s\n'%(pp,prot,suj)))
+                                    f2.write(('cd /nasDicom/spm_raw/;cd %s; rm -rf  %s \n'%(prot,suj)))
+        
+                        
+                        sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[ind]['Eid'])
+                        f4.write(sqlcmd)
                              
                 strinfo += "\n\n"
                 self.log.info(strinfo)
+            else:
+                strinfo += "TODOOOOO\n'
                 
             f1.close()
             f11.close()
@@ -745,6 +762,9 @@ class Cenir_DB:
         sqlcmd = "SELECT duration, AcqTime from serie where ExamRef=%d and Snumber = (select min(SNumber) from serie where ExamRef=%d and Duration>0)" % (eid,eid)
         cur.execute(sqlcmd)
         data = cur.fetchone()
+        if data is None :
+            return #empty because duration is 0 ... buggy reconstructed serie for instance PREV_DEMALS_001_0014_FT_E2
+        
         t1 = data['AcqTime']
         
         sqlcmd = "SELECT duration, AcqTime from serie where ExamRef=%d and Snumber = (select max(SNumber) from serie where ExamRef=%d and Duration>0)" % (eid,eid)
