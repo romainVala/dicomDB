@@ -126,8 +126,13 @@ class Exam_info:
     
         p1=dicom.read_file(dic1,stop_before_pixels=True)
         
-        
-        dicinfo["ExamNum"] = int(p1.StudyID)
+        if 'StudyID' not in p1:
+            dicinfo["ExamNum"] = 1
+        else: 
+            if p1.StudyID is '' :
+                dicinfo["ExamNum"] = 1
+            else:                       
+                dicinfo["ExamNum"] = int(p1.StudyID)
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
         if 'ManufacturersModelName' not in p1:
@@ -347,14 +352,18 @@ class Exam_info:
         #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcqTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
         
-        dstr = p1.StudyDate
-        tstr = p1.StudyTime
-        dicStudyTime = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
-
+        dstrs = p1.StudyDate
+        tstrs = p1.StudyTime
+        dicStudyTime = datetime.datetime(int(dstrs[0:4]),int(dstrs[4:6]),int(dstrs[6:]),int(tstrs[0:2]),int(tstrs[2:4]),int(tstrs[4:6]))
+        
         if dicinfo["AcqTime"] < dicStudyTime : #bug for TENSOR series
-           dicinfo["AcqTime"] =  '0000-00-00 00:00:00' #dicStudyTime
            if 'TENSOR' not in alpha_num_str(p1.SeriesDescription):
-               self.log.warning('I thougth it was only for TENSOR ...check AcquisitionTime')
+               self.log.warning('I thougth it was only for TENSOR ...taking AcqTime')
+               self.log.warning('Acqtime %s  is before studyTime %s  ', dicinfo["AcqTime"],dicStudyTime)
+           else:
+               dicinfo["AcqTime"] =  '0000-00-00 00:00:00' #dicStudyTime
+               
+        
 
         dicinfo["dicom_sdir"] = os.path.basename(os.path.dirname(dic1))
 
@@ -1073,11 +1082,16 @@ class Exam_info:
                 
         
         suj = str_date + '_' + alpha_num_str(meta["PatientName"])
-        exaid = meta["StudyID"]
+        try :
+            exaid = meta["StudyID"]
+        except:
+            exaid='1'
+                
         if len(exaid)>1 : #Service patient has strange Eid
             suj += '_E' + exaid
         elif int(exaid)>1:
             suj += '_E' + exaid
+            
         if 'SeriesDescription' not  in meta:
             meta["SeriesDescription"] = 'nodescription'
             
