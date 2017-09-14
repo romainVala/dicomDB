@@ -501,7 +501,7 @@ class Cenir_DB:
                 strinfo += "\n\n"
                 self.log.info(strinfo)
             else:
-                strinfo += "TODOOOOO\n'
+                strinfo += "TODOOOOO\n"
                 
             f1.close()
             f11.close()
