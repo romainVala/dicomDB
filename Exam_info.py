@@ -448,44 +448,45 @@ class Exam_info:
                         
         if 'SequenceName' in p1 or [0x19,0x109c] in p1:
             dicinfo["TR"] =  float(p1.RepetitionTime)
-	    te = p1.EchoTime
-        if not te : #len(te) is 0:
-            dicinfo["TE"] = 0
-        else:
-            dicinfo["TE"] = int(p1.EchoTime)
-            dicinfo["FA"] = int(p1.FlipAngle)
-            dicinfo["PixelBw"] = int(p1.PixelBandwidth)
-            
-            aa=p1.PixelSpacing
-            dicinfo["dimX"] = int(p1.Rows)
-            dicinfo["dimY"] = int(p1.Columns) #do not work for mosaic
-            dicinfo["dimZ"] = 0
 
-            if 'NumberOfPhaseEncodingSteps' in p1:
-                dicinfo["dimPhase"] = int(p1.NumberOfPhaseEncodingSteps)
-            
-            dicinfo["sizeX"] = float(aa[0])
-            dicinfo["sizeY"] = float(aa[1])
-            dicinfo["sizeZ"] = float(p1.SliceThickness)
-            
-            if "SliceSpacing" in p1:
-                dicinfo["Slicegap"] = float(p1.SpacingBetweenSlices)-dicinfo["sizeZ"]
+            te = p1.EchoTime
+            if not te : #len(te) is 0:
+                dicinfo["TE"] = 0
             else:
-                dicinfo["SliceGap"] = 0
-            
-            if "InPlanePhaseEncodingDirection" in p1:
-                dicinfo["PhaseDir"] =p1.InPlanePhaseEncodingDirection
-            #dicinfo[""] = dicinfo[""]
-        
-            if "InversionTime" in p1:
-                dicinfo["TI"] = int(p1.InversionTime)
-
+                dicinfo["TE"] = int(p1.EchoTime)
+                dicinfo["FA"] = int(p1.FlipAngle)
+                dicinfo["PixelBw"] = int(p1.PixelBandwidth)
                 
-            dicinfo["Affine"] = my_list_to_str(p1.ImageOrientationPatient)
-            dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(p1.ImagePositionPatient)
+                aa=p1.PixelSpacing
+                dicinfo["dimX"] = int(p1.Rows)
+                dicinfo["dimY"] = int(p1.Columns) #do not work for mosaic
+                dicinfo["dimZ"] = 0
+    
+                if 'NumberOfPhaseEncodingSteps' in p1:
+                    dicinfo["dimPhase"] = int(p1.NumberOfPhaseEncodingSteps)
+                
+                dicinfo["sizeX"] = float(aa[0])
+                dicinfo["sizeY"] = float(aa[1])
+                dicinfo["sizeZ"] = float(p1.SliceThickness)
+                
+                if "SliceSpacing" in p1:
+                    dicinfo["Slicegap"] = float(p1.SpacingBetweenSlices)-dicinfo["sizeZ"]
+                else:
+                    dicinfo["SliceGap"] = 0
+                
+                if "InPlanePhaseEncodingDirection" in p1:
+                    dicinfo["PhaseDir"] =p1.InPlanePhaseEncodingDirection
+                #dicinfo[""] = dicinfo[""]
             
-            scan_seq = my_list_to_str(p1.ScanningSequence)
-            acquisitionType =  str(p1.MRAcquisitionType)
+                if "InversionTime" in p1:
+                    dicinfo["TI"] = int(p1.InversionTime)
+    
+                    
+                dicinfo["Affine"] = my_list_to_str(p1.ImageOrientationPatient)
+                dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(p1.ImagePositionPatient)
+                
+                scan_seq = my_list_to_str(p1.ScanningSequence)
+                acquisitionType =  str(p1.MRAcquisitionType)
             
         elif "PT" in p1.Modality: #for PT params
             dicinfo["Seqname"]=p1.SeriesDescription
