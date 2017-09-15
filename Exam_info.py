@@ -138,8 +138,8 @@ class Exam_info:
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
         if 'ManufacturersModelName' not in p1:
-	    if 'Manufacturer' in p1:
-		p1.ManufacturersModelName = p1.Manufacturer
+            if 'Manufacturer' in p1:
+                p1.ManufacturersModelName = p1.Manufacturer
 	  
         dicinfo["MachineName"] = p1.ManufacturersModelName
 	#pour les wip GE changement du machinename !                
@@ -226,10 +226,10 @@ class Exam_info:
         if len(p1.PatientBirthDate)>0:
             dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
         
-	if 'PatientsAge' not in p1:
-    	    dicinfo["PatientsAge"] = "NULL"
-	else:
-            if len(p1.PatientsAge)>0:            
+        if 'PatientsAge' not in p1:
+            dicinfo["PatientsAge"] = "NULL"
+        else:
+            if len(p1.PatientsAge)>0:
                 dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
             
         if "PatientsBirthDate" not in dicinfo:
@@ -449,10 +449,10 @@ class Exam_info:
         if 'SequenceName' in p1 or [0x19,0x109c] in p1:
             dicinfo["TR"] =  float(p1.RepetitionTime)
 	    te = p1.EchoTime
-	    if not te : #len(te) is 0:
-		dicinfo["TE"] = 0
-	    else:	
-	        dicinfo["TE"] = int(p1.EchoTime)
+        if not te : #len(te) is 0:
+            dicinfo["TE"] = 0
+        else:
+            dicinfo["TE"] = int(p1.EchoTime)
             dicinfo["FA"] = int(p1.FlipAngle)
             dicinfo["PixelBw"] = int(p1.PixelBandwidth)
             
@@ -848,8 +848,8 @@ class Exam_info:
                 
                 elif "Manufacturer" in meta and "GE MEDICAL SYSTEMS" in meta.get("Manufacturer") and "ScanningSequence"in meta and "EP" in meta.get("ScanningSequence"):  
                     self.write_diff_to_file(nw,o_path)
-		elif "Manufacturer" in meta and  "Bruker" in meta.get("Manufacturer") and "MRDiffusionSequence" in meta:
-		    self.write_diff_to_file(nw,o_path)
+        elif "Manufacturer" in meta and  "Bruker" in meta.get("Manufacturer") and "MRDiffusionSequence" in meta:
+            self.write_diff_to_file(nw,o_path)
                 
         return dicinfo
  
@@ -1110,28 +1110,24 @@ class Exam_info:
         bvec=[]
         
         for ind in range(shape[3]):
-                
-                if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
-                    diffinfos=nw.get_meta("Diffusioninfos",(0,0,0,ind))
-                    diffdir=diffinfos[0:3]
-                    bvaltmp=diffinfos[3]
-		    bval.append(bvaltmp)
+            if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
+                diffinfos=nw.get_meta("Diffusioninfos",(0,0,0,ind))
+                diffdir=diffinfos[0:3]
+                bvaltmp=diffinfos[3]
+                bval.append(bvaltmp)
+            elif 'Bruker' in nw.get_meta("Manufacturer"):
+                diffall = nw.get_meta("MRDiffusionSequence",(0,0,0,ind))
+                diffdir = diffall[0]["DiffusionGradientDirectionSequence"][0]["DiffusionGradientOrientation"]
+                bvaltmp = diffall[0]["DiffusionBValue"]
+                bval.append(bvaltmp)
+            else:
+                diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
+                bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
 
-		elif 'Bruker' in nw.get_meta("Manufacturer"):
-		    diffall = nw.get_meta("MRDiffusionSequence",(0,0,0,ind))
-		    diffdir = diffall[0]["DiffusionGradientDirectionSequence"][0]["DiffusionGradientOrientation"]
-                    bvaltmp = diffall[0]["DiffusionBValue"]
-		    bval.append(bvaltmp)
 
-                else:                            
-                    diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
-		    bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
-
-            
-                if diffdir is None:
-                    diffdir =  [0, 0, 0] 
-                bvec.append( diffdir )
-                               
+        if diffdir is None:
+            diffdir =  [0, 0, 0]
+            bvec.append( diffdir )
         
         bv = np.matrix(bvec)
         bval = np.array(bval,ndmin=2).T #bval.reshape((bval.size,1))
@@ -1141,34 +1137,34 @@ class Exam_info:
         mivox =  np.matrix((np.identity(3) * vox)).I
         rotnii = np.dot(mat,mivox)
         #I do not know why I have to change some sign ... (deduce from try and test)      
-	if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):  
-	    rot = rotnii
-	else:
-	    rot = np.dot(np.diag([-1, -1 ,1]),rotnii)
-	
-	#dicom orientation	
- 
-	patorient = nw.get_meta('ImageOrientationPatient')
-     # For GE Oblique sequence more than one ImageOrientation (but all very close)     
-	if patorient is None:
-         patorient = nw.get_meta('ImageOrientationPatient',(0,0,0,0))
-      
 
-	patorient = np.reshape(patorient, (2, 3)).T
-	rotations = np.eye(3)
-	rotations[:, :2] = patorient
-	# Third direction cosine from cross-product of first two
-	# TODO it may not always be the cross-product ... genral case should look at each slices
-	rotations[:, 2] = np.cross(patorient[:, 0], patorient[:, 1])
-	#rotations = np.dot(rotnii,rotations) ca marche pas !!! pour GE il manque -1 sur x et pour siemens -1 sur y arggg
-         #pour GE ne pas appliquer la rotation aux bvecs car deja dans le repere de la boite
+        if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):  
+            rot = rotnii
+        else:
+            rot = np.dot(np.diag([-1, -1 ,1]),rotnii)
+
+        #dicom orientation
+        patorient = nw.get_meta('ImageOrientationPatient')
+        # For GE Oblique sequence more than one ImageOrientation (but all very close)     
+        if patorient is None:
+            patorient = nw.get_meta('ImageOrientationPatient',(0,0,0,0))
+
+        patorient = np.reshape(patorient, (2, 3)).T
+
+        rotations = np.eye(3)
+        rotations[:, :2] = patorient
+
+        # Third direction cosine from cross-product of first two
+        # TODO it may not always be the cross-product ... genral case should look at each slices
+        rotations[:, 2] = np.cross(patorient[:, 0], patorient[:, 1])
+        #rotations = np.dot(rotnii,rotations) ca marche pas !!! pour GE il manque -1 sur x et pour siemens -1 sur y arggg
+        #pour GE ne pas appliquer la rotation aux bvecs car deja dans le repere de la boite
         if 'GE MEDICAL SYSTEMS' in nw.get_meta("Manufacturer"):
             bvecnew=bvec
         else:
             bvecnew = np.dot(bv,rot)
 
-        
-	bvecnew_dic = np.dot(bv,rotations)
+        bvecnew_dic = np.dot(bv,rotations)
         out_path = os.path.join(dest_dir, 'diffusion_dir.bvecs')        
         out_path_dic = os.path.join(dest_dir, 'diffusion_dir.dicom_vec')        
         if os.path.isfile(out_path) :
