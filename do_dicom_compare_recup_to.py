@@ -162,7 +162,7 @@ if __name__ == '__main__':
             fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir,proto,suj)))
-            fmovesql.write('do_dicom_series_DB.py -c import_db --input_dir=%s\n',%'os.path.join(dicom_dir,proto,suj)))
+            fmovesql.write('do_dicom_series_DB.py -c import_db --input_dir=%s\n',%(os.path.join(dicom_dir,proto,suj)))
             
         else:
             in_recup_ser = c.get_subdir_regex(sujrecup,'.*')
