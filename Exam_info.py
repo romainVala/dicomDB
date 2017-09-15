@@ -48,6 +48,8 @@ class Exam_info:
         
         for adir in in_dir :        
             if is_dir_level_series : #if --input_dir is use
+                if adir[-1]=='/':
+                    adir=adir[:-1]
                 series_dir = [adir]
                 adir = os.path.dirname(adir)
             else:                
