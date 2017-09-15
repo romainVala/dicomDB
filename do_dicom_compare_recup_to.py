@@ -214,7 +214,20 @@ if __name__ == '__main__':
                         different='Identical'
                         
                         if dicok_r is False:
-                            log.info('WARNING Recup data has wrong data')
+                            log.info('WARNING Recup data has wrong volumic data')
+                            dicsizer=0
+                            for f in ffr:
+                                dicsizer+=os.path.getsize(f)
+                                
+                            dicsized=0
+                            for f in ffd:
+                                dicsized+=os.path.getsize(f)
+                            if   dicsizer==dicsized :
+                                log.info('BUT same size of dicom files so remove recup')
+                                fmoverecup.write('rm -rf %s\n'%serrecup)
+                            else:
+                                log.info('DOUBLE WARNING Different dicom size recup %d dicom %d',dicsizer,dicsized)
+                                
                         else :
                             for nbd in range(len(datar)):
                                 s1 = datar[nbd].shape
