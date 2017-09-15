@@ -138,6 +138,7 @@ if __name__ == '__main__':
 
     ###
     fmove = open(os.path.join(recup_dir,'move_missing.sh'),'w+')
+    fmovesql = open(os.path.join(recup_dir,'sql_missing.sh'),'w+')
     fmovecorupt   = open(os.path.join(recup_dir,'delete_corrupt.sh'),'w+')
     fmoverecup    = open(os.path.join(recup_dir,'delete_recup.sh'),'w+')
     
@@ -161,6 +162,7 @@ if __name__ == '__main__':
             fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir,proto,suj)))
+            fmovesql.write('do_dicom_series_DB.py -c import_db --input_dir=%s\n',%'os.path.join(dicom_dir,proto,suj)))
             
         else:
             in_recup_ser = c.get_subdir_regex(sujrecup,'.*')
@@ -179,6 +181,8 @@ if __name__ == '__main__':
                     fmove.write('mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                     fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
                     fmove.write('   chmod 644 %s/* \n'%(os.path.join(sujdic[0],ser)))
+                    fmovesql.write('do_dicom_series_DB.py -c import_db --input_dir=%s\n',%(os.path.join(sujdic[0],ser)))
+
                 else:
                     Ei = Exam_info.Exam_info(log=log)
 
@@ -199,6 +203,8 @@ if __name__ == '__main__':
                             fmove.write('   mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                             fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
                             fmove.write('   chmod 644 %s/* \n'%(os.path.join(sujdic[0],ser)))
+                            fmovesql.write('do_dicom_series_DB.py -c import_db --input_dir=%s\n',%(os.path.join(sujdic[0],ser)))
+                            
                         else :
                             log.info('WARNING less files in recup\n    %d | %d  (recup | dicom) Serie %s/%s/%s wrong Number\n so remove recup',len(ffr),len(ffd),proto,suj,ser)
                             fmoverecup.write('rm -rf %s\n'%serrecup)
@@ -241,6 +247,7 @@ if __name__ == '__main__':
     fmove.close()    
     fmovecorupt.close()
     fmoverecup.close()
+    fmovesql.close()
                         
                         
                     
