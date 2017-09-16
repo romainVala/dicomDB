@@ -1125,9 +1125,9 @@ class Exam_info:
                 diffdir = nw.get_meta("CsaImage.DiffusionGradientDirection",(0,0,0,ind))
                 bval.append( nw.get_meta("CsaImage.B_value",(0,0,0,ind)))
 
+            if diffdir is None:
+              diffdir =  [0, 0, 0]
 
-        if diffdir is None:
-            diffdir =  [0, 0, 0]
             bvec.append( diffdir )
         
         bv = np.matrix(bvec)
