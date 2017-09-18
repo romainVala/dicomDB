@@ -450,7 +450,7 @@ class Exam_info:
             dicinfo["TR"] =  float(p1.RepetitionTime)
 
             te = p1.EchoTime
-            if not te : #len(te) is 0:
+            if not te and not te==0 : # some seque
                 dicinfo["TE"] = 0
             else:
                 dicinfo["TE"] = int(p1.EchoTime)
@@ -553,13 +553,11 @@ class Exam_info:
                     
             if meta.has_key('InversionTime'):
                 dicinfo["TI"] = int(meta.get('InversionTime'))                
-
             
             if meta.has_key('ScanningSequence'):
                 scan_seq = my_list_to_str(meta.get('ScanningSequence'))
             else :
-            	scan_seq = ''
-                       
+            	scan_seq = ''                   
             
             if meta.has_key('MRAcquisitionType'):
                 acquisitionType = str(meta.get('MRAcquisitionType')) #may be empty
