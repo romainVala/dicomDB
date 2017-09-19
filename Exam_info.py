@@ -368,8 +368,12 @@ class Exam_info:
         
 
         dicinfo["dicom_sdir"] = os.path.basename(os.path.dirname(dic1))
-
-        dicinfo["SName"] = alpha_num_str(p1.SeriesDescription)
+        
+        if 'SeriesDescription' in p1 :
+            dicinfo["SName"] = alpha_num_str(p1.SeriesDescription)
+        else:
+            dicinfo["SName"] = alpha_num_str(p1.ProtocolName)
+        
         dicinfo["SNumber"] = int(p1.SeriesNumber)
         
         dicinfo["SUID"] = "%s"%(p1.SeriesInstanceUID)
@@ -450,7 +454,7 @@ class Exam_info:
             dicinfo["TR"] =  float(p1.RepetitionTime)
 
             te = p1.EchoTime
-            if not te and not te==0 : # some seque
+            if not te and not te==0 : # some sequence PRISMA_CHAMPIGNON/2016_06_02_CENIR_DEV_PHANTOM/S15_CombinedEchoes_fixed_weights TE=0 but other are defined
                 dicinfo["TE"] = 0
             else:
                 dicinfo["TE"] = int(p1.EchoTime)
