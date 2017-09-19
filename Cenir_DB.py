@@ -928,7 +928,7 @@ class Cenir_DB:
             elif type(val) is int or type(val) is float or type(val) is long:
                 sqlcmd = "%s %s = %f," % (sqlcmd,key,val)
             elif val is None:
-                sqlcmd = "%s (NULL)," % (sqlcmd)
+                sqlcmd = "%s %s = (NULL)," % (sqlcmd,key)
             else:
                 msg = "ERROR How to write field %s with %s" % (key,type(val))
                 raise NameError(msg)
