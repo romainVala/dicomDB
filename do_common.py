@@ -112,6 +112,8 @@ class doit:
                                   help="if specify this will tri and coppy all dicom in the rootdir")
         parser.add_option("--mv_file", action ="store_true",dest="mv_file",default=False,
                                   help="if specify this will write a file containing the mv command after tri")
+        parser.add_option("--tri_move", action ="store_true",dest="mv_file",default=False,
+                                  help="if specify this will move the dicom instead of copy")
         parser.add_option("--skip_derived", action ="store_false",dest="skip_derived",default=True,
                                   help="if specify all dicom series will be converted (if not derived series are skiped) ")
         return parser                                  

@@ -1501,7 +1501,7 @@ class Exam_info:
         self.log.info('done\n')
 
 
-    def tri_dicom_dir(self,in_dir,verbose=True,mv_file=False):
+    def tri_dicom_dir(self,in_dir,verbose=True,mv_file=False,tri_move=False):
         import shutil         
         import os
 #        import psutil
@@ -1592,14 +1592,19 @@ class Exam_info:
                                     if not os.path.isfile(foutlist):
                                         dirlist=os.path.dirname(foutlist)
                                         os.makedirs(dirlist)
-                                        shutil.copy2(flistin,foutlist)
+                                        if tri_move:
+                                            shutil.move(flistin,foutlist)
+                                        else:
+                                            shutil.copy2(flistin,foutlist)
                                 except:
                                     print 'Tried to copy PETlistfile without success'
                         except:
                             pass
                             
-                        
-                        shutil.copy2(fin,fout)
+                        if tri_move:
+                            shutil.move(fin,fout)
+                        else:
+                            shutil.copy2(fin,fout)
                         
                         if mv_file:            
                             f1.write(('rm -f %s\n'%(fintxt)))
