@@ -529,7 +529,7 @@ def get_dicom_exam_info(dic1,dic2):
     else:
         dur = get_series_duration_from_file(dic2)
     
-    if len(p2.dir("AcquisitionDate"))==0:
+    if len(p2.dir("AcquisitionDate"))==0 or len(p2.dir("AcquisitionTime"))==0:
         deltadur = get_second_from_time_str(p2.SeriesTime) - get_second_from_time_str(p1.SeriesTime)
     else:
         deltadur = get_second_from_time_str(p2.AcquisitionTime) - get_second_from_time_str(p1.AcquisitionTime)
