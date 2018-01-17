@@ -508,6 +508,7 @@ class Cenir_DB:
             f2.close()
             f3.close()
             f4.close()
+            f5.close()
             
             #remove empty exam line
             self.log.info("loking at empty exam ")
