@@ -28,6 +28,8 @@ class Cenir_DB:
         self.log = log
         self.db_exam_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","ExamDuration","PatientsBirthDate","PatientsAge",\
         "PatientsSex","PatientsWeight","SoftwareVersions","FirstSerieName","LastSerieName","dicom_dir")
+#        self.db_examID_field = ("ExamName","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime",\
+#        "PatientsSex","PatientsWeight","SoftwareVersions","dicom_dir")
         self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
         "PatientsSex","PatientsWeight","SoftwareVersions","dicom_dir")
 #        self.db_examID_field = ("ExamName","EUID","ExamNum","MachineName","PatientsName","AcquisitionTime","StudyTime","PatientsBirthDate","PatientsAge",\
@@ -219,11 +221,12 @@ class Cenir_DB:
                         
     def find_sql_doublon(self):
         #self.remove_lixium_duplicate_exam()
-        #self.check_dicom_remove()        
+        #self.check_dicom_remove()       #quite long so not always 
         self.remove_duplicate_exam()
         #self.remove_duplicate_exam_correct()
+        #self.check_dicom_serie_remove()
         #self.remove_duplicate_serieUID()
-        #self.remove_duplicate_serie()
+        #self.remove_duplicate_serie()  #boff
         
     def check_dicom_remove(self):
         con,cur = self.open_sql_connection()
@@ -239,6 +242,25 @@ class Cenir_DB:
                 strinfo = '\nFind missing dicom E:%s  %s %s %s'%(row['Eid'],row['ExamName'],row['PatientsName'],row['dicom_dir'])
                 self.log.info(strinfo)
                 ff.write("delete from exam where Eid=%d;\n"%(row['Eid']))
+
+        con.close()
+        ff.close()
+      
+    def check_dicom_serie_remove(self):
+        con,cur = self.open_sql_connection()
+        sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_sdir, dicom_dir, Sid from ExamSeries where 1;";
+        ff = open('./remove_missing_dicom_dir.sh','w+')
+        print sqlcmd
+        cur.execute(sqlcmd)
+        rows = cur.fetchall()
+        self.log.info('checking %d rows',len(rows))
+
+        for row in rows:
+            serdir_path = os.path.join(row['dicom_dir'],row['dicom_sdir'])
+            if os.path.isdir(serdir_path) is False:
+                strinfo = '\nFind missing dicom E:%s S:%s %s %s %s'%(row['Eid'],row['Sid'],row['ExamName'],row['PatientsName'],serdir_path)
+                self.log.info(strinfo)
+                ff.write("delete from serie where Sid=%d;\n"%(row['Sid']))
 
         con.close()
         ff.close()
@@ -439,7 +461,9 @@ class Cenir_DB:
             f2=open('./remove_exam_doublon_dicom_raw.sh', 'w+')
             f3=open('./remove_exam_doublon_AC.sh', 'w+')
             f4 = open('./remove_exam_sql','w+')
+            f44 = open('./remove_exam_sql_doublon_before_reimport','w+')            
             f5 = open('./reimport_exam','w+')
+            f6 = open('./reimport_exam_doublon','w+')
             
             self.log.info('%d exam doublons',len(rows))
             for row in rows:
@@ -456,7 +480,7 @@ class Cenir_DB:
                     #timedir.append(os.path.getmtime(serdir[0]))
                     #timedir.append(drow['EUID']) do not work
                     serdir = c.get_subdir_regex(drow['dicom_dir'],'^S')
-                    if not serdir:
+                    if not serdir or len(serdir)==0:
                         self.log.error('Eid %s Pat %s dic %s',drow['Eid'],drow['PatientsName'],drow['dicom_dir'])
                     files = c.get_subdir_regex_files(serdir[0],'.*dic')                    
                     timedir.append(os.path.getmtime(files[0]))
@@ -467,6 +491,10 @@ class Cenir_DB:
                     strinfo += '\nWARNING SAME DICOM DIR Please reimport'
                     self.log.info(strinfo)
                     f5.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[0]['dicom_dir']))
+                    #sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[0]['Eid'])
+                    #f4.write(sqlcmd)         
+                    #sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[1]['Eid'])
+                    #f4.write(sqlcmd)
                     continue
     
                 sind = sorted(range(len(timedir)), key=timedir.__getitem__)
@@ -496,6 +524,12 @@ class Cenir_DB:
                     strinfo+='\n  the bad has %d series'%(serbad['nbs'])
                     strinfo+='\n  the ok  has %d series'%(serok['nbs'])
                     do_move=False
+                    f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[0]['dicom_dir']))
+                    f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[1]['dicom_dir']))
+                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[0]['Eid'])
+                    f44.write(sqlcmd)         
+                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[1]['Eid'])
+                    f44.write(sqlcmd)
                 
                 if do_move:
                     for ind in sind[:-1]:
@@ -549,7 +583,9 @@ class Cenir_DB:
             f2.close()
             f3.close()
             f4.close()
+            f44.close()
             f5.close()
+            f6.close()
             
             #remove empty exam line
             self.log.info("loking at empty exam ")
