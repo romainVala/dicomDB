@@ -295,8 +295,49 @@ class Cenir_DB:
         con.close()
         self.log.info('Done')
         
-        
     def remove_duplicate_serie(self):
+        con,cur = self.open_sql_connection()
+
+        import common as c
+
+        #sqlcmd="select count(*), Eid, dicom_dir,dicom_sdir , SName from ExamSeries group by SNumber, AcqTime, MachineName having count(*)>1;"
+        sqlcmd="select count(*) as doublon, e.* from ExamSeries e group by SNumber, AcqTime, MachineName having count(*)>1;"
+        cur.execute(sqlcmd)
+        rows = cur.fetchall()
+        self.log.info('looking for serie duplicate (same AcqTime and SNumber)')
+
+        if len(rows)==0:
+            self.log.info('Did not find Any  duplicate series double')
+            return
+        
+        self.log.info('%d series doublons',len(rows))
+        for row in rows:
+      
+            #sqlcmd = "select  * from exam where AcquisitionTime='%s' and MachineName='%s'"%(row['AcquisitionTime'],row['MachineName'])
+            sqlcmd = "select  * from ExamSeries where MachineName='%s' and AcqTime='%s' and SNumber='%s'"%(row['MachineName'],row['AcqTime'],row['SNumber'])
+            cur.execute(sqlcmd)
+            drows = cur.fetchall() 
+            timedir = []
+            strinfo = '\nFind %d doublon '%(row['doublon'])
+
+            for drow in drows:
+                serreg="^%s$"%(drow['dicom_sdir'])
+                serdir = c.get_subdir_regex(drow['dicom_dir'],serreg)
+                if not serdir:
+                    self.log.error('Eid %s Pat %s dic %s',drow['Eid'],drow['PatientsName'],drow['dicom_dir'])
+                files = c.get_subdir_regex_files(serdir[0],'.*dic')
+                timedir.append(os.path.getmtime(files[0]))
+
+                strinfo+='\n  suj (%s) : %s dicom_dir : %s Ser : %s'%(drow['Eid'],drow['PatientsName'],drow['dicom_dir'],drow['dicom_sdir'])
+
+            sind = sorted(range(len(timedir)), key=timedir.__getitem__)
+            strinfo += '\n the last created is line %d'%(sind[-1]+1)
+
+            strinfo += "\n\n"
+            self.log.info(strinfo)
+
+
+    def remove_duplicate_serie_old(self):
         con,cur = self.open_sql_connection()
         
         #find double exams
