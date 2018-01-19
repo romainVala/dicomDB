@@ -361,7 +361,7 @@ class Results_DB:
         
         
         # remote application entity
-        PrismaAE = dict(Address="134.157.205.1", Port=104, AET="AN_MRC35181")
+        PrismaAE = dict(Address="192.168.6.1", Port=104, AET="IRM1_PRIM")
         
         # create association with remote AE
         self.log.info("Request association on PRISMA")
@@ -380,7 +380,7 @@ class Results_DB:
         assoc.Release(0)
 
         # AGAIN with VERIO
-        VerioAE = dict(Address="134.157.205.51", Port=104, AET="MRC40527")
+        VerioAE = dict(Address="192.168.6.4", Port=104, AET="IRM2_PRIM")
         
         # create association with remote AE
         self.log.info("Request association on VERIO")
