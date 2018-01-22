@@ -84,7 +84,7 @@ class Cenir_DB:
                 if test is False :
                     for dicser in E["serie_info"] :
                         dicser["ExamRef"] = int(examID)
-                        exist_UID_serie = self.get_sql_select_line('serie','SUID',dicser['SUID'],cur)
+                        exist_UID_serie = self.get_sql_select_line('ExamSeries','SUID',dicser['SUID'],'EUID',E['EUID'],cur)
                        
                         if len(exist_UID_serie)==0:
                             self.log.info("SQL INSERT serie %s num %d", dicser['SName'] , dicser['SNumber'])
@@ -773,13 +773,15 @@ class Cenir_DB:
 #
 #        return data
                 
-    def get_sql_select_line(self,table,id_field,id_val,sql_cur):
+    def get_sql_select_line(self,table,id_field,id_val,id_field2,id_val2,sql_cur):
 
-        sqlcmd = "SELECT * from %s WHERE %s like '%s' " %(table,id_field,id_val)
+        sqlcmd = "SELECT * from %s WHERE %s like '%s' and  %s like '%s'  " %(table,id_field,id_val,id_field2,id_val2)
         sql_cur.execute(sqlcmd)
         data={}
         if sql_cur.rowcount>0:
             data = sql_cur.fetchone()
+
+        self.log.debug('SQL select line is %s',sqlcmd)
 
         return data
                 
@@ -945,6 +947,8 @@ class Cenir_DB:
         if cur.rowcount>0:
             data = cur.fetchone()
 
+        self.log.debug('Find %d series', len(data))
+
         return data
         
     def get_sql_insert_cmd_from_dict(self,E,table):
@@ -1014,6 +1018,7 @@ class Cenir_DB:
         whereclause = " WHERE %s=%s" %(where_field,where_value)
         sqlcmd = sqlcmd[:-1]+ whereclause
 
+        self.log.debug('SQL update is %s',sqlcmd)
         return sqlcmd
               
         
