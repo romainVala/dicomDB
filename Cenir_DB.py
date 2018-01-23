@@ -220,13 +220,14 @@ class Cenir_DB:
         con.close()
                         
     def find_sql_doublon(self):
-        #self.remove_lixium_duplicate_exam()
-        #self.check_dicom_remove()       #quite long so not always 
         self.remove_duplicate_exam()
+        #self.remove_duplicate_serie()  
+        #self.check_dicom_remove()       #quite long so not always 
+
+        #self.remove_lixium_duplicate_exam()
         #self.remove_duplicate_exam_correct()
         #self.check_dicom_serie_remove()
         #self.remove_duplicate_serieUID()
-        #self.remove_duplicate_serie()  #boff
         
     def check_dicom_remove(self):
         con,cur = self.open_sql_connection()
@@ -322,8 +323,13 @@ class Cenir_DB:
 
         import common as c
 
+        f1 = open('./remove_series_doublon.sh','w+')
+        f3 = open('./remove_series_doublon_AC.sh', 'w+')
+        f4 = open('./remove_series_sql','w+')
+
+
         #sqlcmd="select count(*), Eid, dicom_dir,dicom_sdir , SName from ExamSeries group by SNumber, AcqTime, MachineName having count(*)>1;"
-        sqlcmd="select count(*) as doublon, e.* from ExamSeries e group by SNumber, AcqTime, MachineName having count(*)>1;"
+        sqlcmd="select count(*) as doublon, e.*, substring(AcqTime,1,16) as shortAcqTime from ExamSeries e group by SNumber, substring(AcqTime,1,16) , MachineName having count(*)>1;"
         cur.execute(sqlcmd)
         rows = cur.fetchall()
         self.log.info('looking for serie duplicate (same AcqTime and SNumber)')
@@ -336,7 +342,7 @@ class Cenir_DB:
         for row in rows:
       
             #sqlcmd = "select  * from exam where AcquisitionTime='%s' and MachineName='%s'"%(row['AcquisitionTime'],row['MachineName'])
-            sqlcmd = "select  * from ExamSeries where MachineName='%s' and AcqTime='%s' and SNumber='%s'"%(row['MachineName'],row['AcqTime'],row['SNumber'])
+            sqlcmd = "select  * from ExamSeries where MachineName='%s' and substring(AcqTime,1,16)='%s' and SNumber='%s'"%(row['MachineName'],row['shortAcqTime'],row['SNumber'])
             cur.execute(sqlcmd)
             drows = cur.fetchall() 
             timedir = []
@@ -356,7 +362,64 @@ class Cenir_DB:
             strinfo += '\n the last created is line %d'%(sind[-1]+1)
 
             strinfo += "\n\n"
+            
+
+            sp1 = os.path.join(drows[0]['dicom_dir'],drows[0]['dicom_sdir'])
+            sp2 = os.path.join(drows[1]['dicom_dir'],drows[1]['dicom_sdir'])
+            if sp1 == sp2 :
+                self.log.info(strinfo)
+                self.log.warning(" !!! same dicom dir should not happen !!!")
+                continue
+
+            #find series of the first
+            sqlcmd = "select sum(nb_dic_file) as nbd from serie s where ExamRef='%d' and SUID='%s' "%(drows[sind[0]]['Eid'],drows[sind[0]]['SUID'])
+            cur.execute(sqlcmd)
+            serbad = cur.fetchone()
+            sqlcmd = "select sum(nb_dic_file) as nbd from serie s where ExamRef='%d' and SUID='%s' "%(drows[sind[-1]]['Eid'],drows[sind[-1]]['SUID'])
+            cur.execute(sqlcmd)
+            serok = cur.fetchone()
+
+            do_move=True
+            if serok['nbd'] == serbad['nbd']:
+                strinfo+='same number of dicom files'
+            else :
+                strinfo+='\nWARNING different number of dicom files'
+                strinfo+='\n  the bad has %d files'%(serbad['nbd'])
+                strinfo+='\n  the ok  has %d files'%(serok['nbd'])
+                if serok['nbd'] > serbad['nbd']:
+                    strinfo+='\n  but ok to move '
+                else:
+                    strinfo+='\n  do not move '
+                    do_move=False
+
+            if do_move:
+
+                for ind in sind[:-1]:
+                    dicdir = drows[ind]['dicom_dir']
+                    dicser = drows[ind]['dicom_sdir']
+                    pp,suj = os.path.split(dicdir)
+                    pp,prot = os.path.split(pp)
+                    strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
+
+                    #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
+                    f1.write(('mkdir /export/dataCENIR/dicom/doublon_dicom/%s \n'%(suj)))
+                    f1.write(('mv /export/dataCENIR/dicom/dicom_raw/%s/%s/%s /export/dataCENIR/dicom/doublon_dicom/%s\n'%(prot,suj,dicser,suj)))
+                    f1.write(('cd /export/dataCENIR/dicom/nifti_raw/%s/%s/; rm -rf %s \n'%(prot,suj,dicser)))
+                    f1.write(('mkdir /nasDicom/doublon_dicom/%s \n'%(suj)))
+                    f1.write(('mv /nasDicom/dicom_raw/%s/%s/%s /nasDicom/doublon_dicom/%s\n\n'%(prot,suj,dicser,suj)))
+
+                    f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw/%s/%s; rm -rf %s; rm -rf %s.tar.gz \n'%(prot,suj,dicser,dicser)))
+
+                    strinfo+= "\ndelete from exam where Sid='%s' " % (drows[ind]['Sid'])
+                    f4.write("delete from serie where Sid='%s';\n"%(drows[ind]['Sid']))
+            
+            strinfo += "\n\n"
             self.log.info(strinfo)
+
+        f1.close()
+        f3.close()
+        f4.close()
+
 
 
     def remove_duplicate_serie_old(self):
@@ -587,16 +650,16 @@ class Cenir_DB:
             f5.close()
             f6.close()
             
-            #remove empty exam line
-            self.log.info("loking at empty exam ")
-            f5 = open('./remove_empty_exam_sql','w+')
-            
-            sqlcmd = "select exam.Eid from exam left outer join serie on (exam.Eid = serie.ExamRef ) where serie.ExamRef is null;"
-            cur.execute(sqlcmd)
-            rows = cur.fetchall()
-            for row in rows:
-                f5.write("delete from exam where Eid='%s' ;\n"%(row['Eid']))
-            f5.close()
+        #remove empty exam line
+        self.log.info("loking at empty exam ")
+        f5 = open('./remove_empty_exam_sql','w+')
+        
+        sqlcmd = "select exam.Eid from exam left outer join serie on (exam.Eid = serie.ExamRef ) where serie.ExamRef is null;"
+        cur.execute(sqlcmd)
+        rows = cur.fetchall()
+        for row in rows:
+            f5.write("delete from exam where Eid='%s' ;\n"%(row['Eid']))
+        f5.close()
                 
 
         con.close()
