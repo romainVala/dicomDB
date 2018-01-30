@@ -1330,10 +1330,10 @@ class Exam_info:
             if self.send_mail:
 				try :
 					if len(self.send_mail_file)>0:
-		                oname = self.send_mail_file + exa+'_'+suj+'_'+ser
-		                c.send_mail_file(strinfo,oname)
-		            else:
-		                c.send_mail(strinfo,'Dicom files problem')
+						oname = self.send_mail_file + exa+'_'+suj+'_'+ser
+						c.send_mail_file(strinfo,oname)
+					else:
+						c.send_mail(strinfo,'Dicom files problem')
 		        except:
 					self.log.warning('FAIL to send mail')
         
