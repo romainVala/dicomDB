@@ -1329,7 +1329,7 @@ class Exam_info:
 
             if self.send_mail:
 				try :
-		            if len(self.send_mail_file)>0:
+					if len(self.send_mail_file)>0:
 		                oname = self.send_mail_file + exa+'_'+suj+'_'+ser
 		                c.send_mail_file(strinfo,oname)
 		            else:
