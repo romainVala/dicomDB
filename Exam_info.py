@@ -1334,7 +1334,7 @@ class Exam_info:
 						c.send_mail_file(strinfo,oname)
 					else:
 						c.send_mail(strinfo,'Dicom files problem')
-		        except:
+				except:
 					self.log.warning('FAIL to send mail')
         
         return first_file,last_file,corrupt
