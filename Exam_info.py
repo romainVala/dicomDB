@@ -1328,11 +1328,14 @@ class Exam_info:
             strinfo += '\n Please check \t%s \t%s \t%s  \n %s'%(exa,suj,ser,vol[2])
 
             if self.send_mail:
-                if len(self.send_mail_file)>0:
-                    oname = self.send_mail_file + exa+'_'+suj+'_'+ser
-                    c.send_mail_file(strinfo,oname)
-                else:
-                    c.send_mail(strinfo,'Dicom files problem')
+				try :
+		            if len(self.send_mail_file)>0:
+		                oname = self.send_mail_file + exa+'_'+suj+'_'+ser
+		                c.send_mail_file(strinfo,oname)
+		            else:
+		                c.send_mail(strinfo,'Dicom files problem')
+		        except:
+					self.log.warning('FAIL to send mail')
         
         return first_file,last_file,corrupt
         
