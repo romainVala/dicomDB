@@ -75,6 +75,12 @@ class Cenir_DB:
         
         for E in Ei:
             
+            dicdir = E['dicom_dir']
+            if dicdir.find('doublon')>0 :
+                self.log.warning(" SKIPING import of %s \n because contained doublon",dicdir)
+                continue
+
+            print 'dicdir is %s'%(dicdir)
             exist_line = self.get_sql_exam_line(E,cur)
             if len(exist_line)>0 : 
                 self.log.info("Skiping (because exist) Exam insert of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['ExamName'],E['AcquisitionTime'])
