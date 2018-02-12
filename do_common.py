@@ -57,6 +57,8 @@ class doit:
                                   help="if specify this send a mail for missing dicom file")
         parser.add_option("--send_mail_file", action ="store",dest="send_mail_file",default='',
                                   help="if specify (absolute root name' this will print the mail in a file")
+        parser.add_option("--smtp_pwd", action ="store",dest="smtp_pwd",default='xxx',
+                                  help="give the spmtp passord note the user and smtp server are hard codeed")
         parser.add_option("-c","--conf_section", action ="store",dest="conf_section",
                                   help="reading default value from the config file section DEFAULT")
         
@@ -189,8 +191,8 @@ class doit:
         
         if self.options.send_mail:
             self.log.warning(format_exception(e))
-            msg = format_exception(e) + "\n runing with \n" + self.options_to_str
-            c.send_mail(msg,'Main error do_dicom_series')
+            msg = format_exception(e) + "\n runing with \n" + self.options_to_str()
+            c.send_mail(msg,'Main error do_dicom_series',self.options.smtp_pwd)
         else:
             self.log.warning("\n MAIN exection : \n%s",format_exception(e))
 

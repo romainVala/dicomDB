@@ -16,7 +16,7 @@ class Exam_info:
                  nifti_dir='/export/dataCENIR/dicom/nifti_raw/',
                  dicom_dir = '/export/home/romain.valabregue/dicom_raw',
                  dicom_ext = '*.dic', send_mail = False,send_mail_file= '',
-                 skip_derived_series=True):
+                 smtp_pwd= '',skip_derived_series=True):
                   
         self.verbose = verbose
         self.nifti_dir = nifti_dir
@@ -25,6 +25,7 @@ class Exam_info:
         self.send_mail = send_mail
         self.send_mail_file = send_mail_file
         self.skip_derived_series = skip_derived_series
+        self.smtp_pwd = smtp_pwd
         
         if dicom_dir[-1]=='/':
             dicom_dir = dicom_dir[:-1]
@@ -1326,16 +1327,15 @@ class Exam_info:
         if len(corrupt)>0:
             (exa,suj,ser) = self.get_exam_suj_ser_from_dicom_meta(vol[1])
             strinfo += '\n Please check \t%s \t%s \t%s  \n %s'%(exa,suj,ser,vol[2])
-
             if self.send_mail:
 				try :
 					if len(self.send_mail_file)>0:
 						oname = self.send_mail_file + exa+'_'+suj+'_'+ser
 						c.send_mail_file(strinfo,oname)
 					else:
-						c.send_mail(strinfo,'Dicom files problem')
-				except:
-					self.log.warning('FAIL to send mail')
+						c.send_mail(strinfo,'Dicom files problem',self.smtp_pwd)
+				except Exception as e:
+					self.log.warning('FAIL to send mail because %s ',e)
         
         return first_file,last_file,corrupt
         

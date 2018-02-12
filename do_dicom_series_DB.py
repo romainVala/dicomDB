@@ -57,7 +57,7 @@ if __name__ == '__main__':
        
         
         E = Exam_info.Exam_info(log=log,nifti_dir=options.nifti_dir,dicom_ext = options.dicom_ext,dicom_dir=options.rootdir,
-                      send_mail = options.send_mail,send_mail_file = options.send_mail_file ,
+                      send_mail = options.send_mail,send_mail_file = options.send_mail_file , smtp_pwd = options.smtp_pwd,
                       skip_derived_series = options.skip_derived)
                       
         CDB = Cenir_DB.Cenir_DB(log=log,opt=options)
@@ -86,11 +86,11 @@ if __name__ == '__main__':
                 log.info("\nPERFORMING GG Database update\n")
                 CDB.update_exam_sql_db_gg(Ei,test=test,do_only_insert=options.do_only_insert) 
             
-        
+
         log.info('done so enjoy')
         
     except Exception as e :
-        raise
+        #raise
         doit.handel_main_exception(e)
             
                 

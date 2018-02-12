@@ -443,19 +443,23 @@ def send_mail_file(message,filename_root):
     ff.write('\n')
     ff.close();
     
-def send_mail(message,subject):
+def send_mail(message,subject,smtp_pwd):
     import smtplib
     from email.mime.text import MIMEText
-    
+
     msg = MIMEText(message)
     
     me = 'dicom.pyConvert@upmc.fr'
     you = 'romain.valabregue@upmc.fr'
+
     msg['Subject'] = subject
     msg['From'] = me
     msg['To'] = you
     
-    s = smtplib.SMTP('courriel.upmc.fr')
+    s = smtplib.SMTP('courriel.upmc.fr',587)
+    s.starttls()
+
+    s.login('valabregue',smtp_pwd)
     s.sendmail(me, [you], msg.as_string())
     s.quit()
   
@@ -525,5 +529,3 @@ def readxls_relecture_files(filename,verbose=False):
     for v in suj_list:
         print v['proto']+' sujname '+v['sujname']
             
-    
-    
