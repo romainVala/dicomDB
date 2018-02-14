@@ -595,13 +595,15 @@ class Exam_info:
             
             dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
         
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
+        if meta.has_key('CsaImage.ImaCoilString'):
+            dicinfo["CoilName"] = str(meta.get('CsaImage.ImaCoilString'))
+        elif meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'):  #for prisma it seems to be an other field
+        elif meta.has_key('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'):  #for prisma it seems to be an other field
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'))
-            
         else:
             dicinfo["CoilName"] = "NULL"
+
         if meta.has_key('CsaSeries.MrPhoenixProtocol.tSequenceFileName'):   
             dicinfo["SeqName2"] = str(meta.get('CsaSeries.MrPhoenixProtocol.tSequenceFileName'))
             dicinfo["SeqName2"] = scan_seq + dicinfo["SeqName2"] + '_' + acquisitionType
