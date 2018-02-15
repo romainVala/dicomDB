@@ -65,6 +65,8 @@ if __name__ == '__main__':
         #tri dicom if ask
         if options.tri_dicom:
             in_dir= E.tri_dicom_dir(in_dir,verbose=False,mv_file=options.mv_file,tri_move=options.tri_move)
+            if (not options.convert_to_nii) and (not options.do_db):
+                sys.exit(0)
         
         #read dicom files
         for onedir in in_dir :
