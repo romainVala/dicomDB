@@ -148,19 +148,18 @@ class Exam_info:
             dicinfo["MachineName"]="SIGNA PET/MR"
 
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
-            if 'StudyDescription' in p1 and len(p1.StudyDescription)>0:
+            if 'ProtocolName' in p1 and len(p1.ProtocolName)>0 and p1.ProtocolName!= ' ':
+                dicinfo["ExamName"]= alpha_num_str(p1.ProtocolName)
+                dicinfo["StudyDescription"]= alpha_num_str(p1.ProtocolName)
+            elif 'StudyDescription' in p1 and len(p1.StudyDescription)>0:
                 dicinfo["ExamName"]= alpha_num_str(p1.StudyDescription)
                 dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
-            elif 'ProtocolName' in p1 and len(p1.ProtocolName)>0 and p1.ProtocolName!= ' ':
-                dicinfo["ExamName"]= alpha_num_str(p1.ProtocolName)
-            else:
-                
+            else:                
                 dicinfo["ExamName"]="Atrier"
         
         elif len(p1.StudyDescription)>0:
             dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
             dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
-        
         
         dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
         
@@ -365,6 +364,7 @@ class Exam_info:
                self.log.warning('Acqtime %s  is before studyTime %s  ', dicinfo["AcqTime"],dicStudyTime)
            else:
                dicinfo["AcqTime"] =  '0000-00-00 00:00:00' #dicStudyTime
+           dicinfo["AcqTime"] = dicStudyTime
                
         
 
@@ -577,8 +577,10 @@ class Exam_info:
         if meta.has_key('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'):
             dicinfo["Duration"]  = int(meta.get('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'))
         elif [0x19,0x105a] in p1:
-            
-            dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
+            if isinstance(p1[0x19,0x105a].value, str):
+            	dicinfo["Duration"]  = p1[0x19,0x105a]
+            else:
+            	dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
             
         else:
             dicinfo["Duration"] = 0
@@ -591,9 +593,6 @@ class Exam_info:
                 dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
             except: 
                 pass
-        if [0x19,0x105a] in p1:
-            
-            dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
         
         if meta.has_key('CsaImage.ImaCoilString'):
             dicinfo["CoilName"] = str(meta.get('CsaImage.ImaCoilString'))
@@ -1038,7 +1037,7 @@ class Exam_info:
         return dest_dir,out_fn
     
     def get_exam_suj_ser_from_dicom_meta(self,meta):
-        
+          
         if "StudyDescription" not in meta : #Service patient on prisma has none
             if "ProtocolName" not in meta :
                 
@@ -1067,6 +1066,12 @@ class Exam_info:
         
         study_date = str(meta["StudyDate"])
         study_date = study_date[0:4]+'_'+study_date[4:6] + '_' + study_date[6:8]
+
+        # change exam field for GE data
+    	if 'Manufacturer' in meta:
+    		if 'GE MEDICAL SYSTEMS' in meta["Manufacturer"]:
+    			if 'ProtocolName' in meta and len(meta["ProtocolName"])>0 and meta["ProtocolName"]!= ' ':
+    				exa = alpha_num_str(meta["ProtocolName"])
 
 #        if "AcquisitionDate" not in meta : 
 #            str_date = study_date
