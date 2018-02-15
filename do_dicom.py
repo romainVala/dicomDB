@@ -276,7 +276,8 @@ def get_first_dicom_file(ser,first):
                 ps=dicom.read_file(os.path.join(ser,thefile))
                 break
             except:
-                print thefile + "  is not DICOM"
+                if not thefile.search("dicom_info"):
+                    print thefile + "  is not DICOM"
                 del ff[0]
                 if len(ff)==0:
                     log.warning('Empty Serie :  %s',ser)
@@ -691,8 +692,8 @@ if __name__ == '__main__':
     # Parse input arguments
     parser=OptionParser(usage=usage)
     #parser.add_option("-h", "--help", action="help")
-    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/nasDicom/dicom_raw',
-                                help="full path to the directorie of protocol default='/nasDicom/dicom_raw'")
+    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/export/dataCENIR/dicom/dicom_raw/',
+                                help="full path to the directorie of protocol default='/export/dataCENIR/dicom/dicom_raw/'")
     parser.add_option("-p","--proto_regex", action="store", dest="proto_reg", default='.*',
                                 help="regular expression to select protocol dir default='.*' ")
     parser.add_option("-s","--suj_regex", action="store", dest="suj_reg", default='.*',
