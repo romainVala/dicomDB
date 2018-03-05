@@ -1064,7 +1064,11 @@ class Exam_info:
         else:
             exa = alpha_num_str(meta["StudyDescription"]) 
         
-        study_date = str(meta["StudyDate"])
+        if "StudyDate" not in meta:
+        	study_date = ''
+        else :
+        	study_date = str(meta["StudyDate"])
+
         if study_date=='':
 			study_date = str(meta["SeriesDate"])
 
