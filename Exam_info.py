@@ -1065,6 +1065,9 @@ class Exam_info:
             exa = alpha_num_str(meta["StudyDescription"]) 
         
         study_date = str(meta["StudyDate"])
+        if study_date=='':
+			study_date = str(meta["SeriesDate"])
+
         study_date = study_date[0:4]+'_'+study_date[4:6] + '_' + study_date[6:8]
 
         # change exam field for GE data
