@@ -122,7 +122,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     recup_dir = options.recupdir
-    dicom_dir0 = '/nasDicom/dicom_raw/'
+    #dicom_dir0 = '/nasDicom/dicom_raw/'
     dicom_dir = '/export/dataCENIR/dicom/dicom_raw'
 
     if len(options.logfile)==0:
@@ -154,10 +154,10 @@ if __name__ == '__main__':
         
         if len(sujdic)==0:
             log.info('Missing Subject %s/%s ',proto,suj)
-            fmove.write('cp -r %s %s;\n'%(sujrecup,os.path.join(dicom_dir0,proto,suj)))
-            fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
-            fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
-            fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+            #fmove.write('cp -r %s %s;\n'%(sujrecup,os.path.join(dicom_dir0,proto,suj)))
+            #fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
+            #fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+            #fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
             fmove.write('mv %s %s;\n'%(sujrecup,os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir,proto,suj)))
@@ -173,10 +173,10 @@ if __name__ == '__main__':
                 
                 if len(serdic) == 0 :
                     log.info('Missing Serie %s/%s',sujdic[0],ser)
-                    fmove.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
-                    fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
-                    fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
-                    fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                    #fmove.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
+                    #fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
+                    #fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                    #fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
 
                     fmove.write('mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                     fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
@@ -194,11 +194,11 @@ if __name__ == '__main__':
                         if len(ffr)>len(ffd):
                             log.info('OK MISSING files in dicom\n    %d | %d  (recup | dicom) Serie %s/%s/%s wrong Number\n so remove dicom',len(ffr),len(ffd),proto,suj,ser)                            
                             fmove.write('rm -rf %s\n'%serdic[0])
-                            fmove.write('rm -rf %s\n'%os.path.join(dicom_dir0,proto,suj,ser))
-                            fmove.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
-                            fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
-                            fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
-                            fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                            #fmove.write('rm -rf %s\n'%os.path.join(dicom_dir0,proto,suj,ser))
+                            #fmove.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
+                            #fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
+                            #fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                            #fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
 
                             fmove.write('   mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                             fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
@@ -244,11 +244,11 @@ if __name__ == '__main__':
                             
                             if different != 'Identical':
                                 fmovecorupt.write('rm -rf %s\n'%serdic[0])
-                                fmovecorupt.write('rm -rf %s\n'%os.path.join(dicom_dir0,proto,suj,ser))
-                                fmovecorupt.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
-                                fmovecorupt.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
-                                fmovecorupt.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
-                                fmovecorupt.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                                #fmovecorupt.write('rm -rf %s\n'%os.path.join(dicom_dir0,proto,suj,ser))
+                                #fmovecorupt.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
+                                #fmovecorupt.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
+                                #fmovecorupt.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir0,proto,suj)))
+                                #fmovecorupt.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir0,proto,suj)))
 
                                 fmovecorupt.write('   mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                                 fmovecorupt.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
