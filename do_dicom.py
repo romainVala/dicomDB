@@ -276,7 +276,7 @@ def get_first_dicom_file(ser,first):
                 ps=dicom.read_file(os.path.join(ser,thefile))
                 break
             except:
-                if not thefile.search("dicom_info"):
+                if not thefile.find("dicom_info")==-1:
                     print thefile + "  is not DICOM"
                 del ff[0]
                 if len(ff)==0:
