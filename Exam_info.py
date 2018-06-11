@@ -347,6 +347,9 @@ class Exam_info:
         if len(p1.dir("AcquisitionDate"))==0:
             dstr = p1.StudyDate
             tstr = p1.StudyTime  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing    
+            # well it seems not to be always the case
+            if len(tstr)==0:
+                tstr = p1.AcquisitionTime
         else:
             dstr = p1.AcquisitionDate
             tstr = p1.AcquisitionTime
