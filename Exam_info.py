@@ -168,9 +168,13 @@ class Exam_info:
         	dstr = p1.AcquisitionDate
         else :
         	dstr = p1.StudyDate
-        	
-        tstr = p1.AcquisitionTime
-        #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
+
+	if 'AcquisitionTime' in p1:
+		tstr = p1.AcquisitionTime
+	else:
+		tstr = p1.StudyTime
+
+	#dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
 
         dstr = p1.StudyDate
@@ -410,7 +414,11 @@ class Exam_info:
         if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
             dicinfo["SeqName"] = "spectroCSI"            
             makeitshort=True
-            
+
+        if 'PHYSIO' in p1.ImageType :
+            dicinfo["SeqName"] = "physio"            
+            makeitshort=True
+
                     
         if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
