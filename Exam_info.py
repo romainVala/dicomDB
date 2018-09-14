@@ -1,7 +1,7 @@
 
 import common as c
 import numpy as np
-import os,math,dicom,datetime,time
+import os,math,pydicom,datetime,time
 import dcmstack
 #from nibabel.spatialimages import HeaderDataError
 from dcmstack import extract , NiftiWrapper

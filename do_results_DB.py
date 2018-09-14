@@ -10,8 +10,8 @@ import sys
 #pour le send dicom (check)
 from netdicom.applicationentity import AE
 from netdicom.SOPclass import *
-from dicom.dataset import Dataset, FileDataset
-from dicom.UID import ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian
+from pydicom.dataset import Dataset, FileDataset
+from pydicom.uid import ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian
 #import netdicom
 import tempfile
 

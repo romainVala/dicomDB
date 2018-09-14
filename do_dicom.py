@@ -8,7 +8,7 @@ Created on Wed Jan 25 11:00:43 2012
 
 import common as c
 import numpy as np
-import os,math,re,dicom,time,logging,datetime,sys
+import os,math,re,pydicom,time,logging,datetime,sys
 import MySQLdb as mdb
 
 db_field_all = ("eid","rid","PatientsName","AcquisitionTime","ExamDuration","PatientsBirthDate","PatientsAge","PatientsSex","PatientsWeight",\
