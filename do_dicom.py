@@ -708,7 +708,7 @@ if __name__ == '__main__':
                                 help="if define will to twice the DB update ")
     parser.add_option("-t","--test_data_base", action="store_true", dest="test_db",default=False,
                                 help="Just write the log of what changes should be donne in the cenir database (for the selected exams). It won't take the -b option ")
-    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/servernas/nasDicom/log_update_db.log',
+    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/export/dataCENIR/dicom/dicom_raw/log_update_db.log',
                                 help="full path to the log file default='/servernas/nasDicom/log_update_db.log'")
     parser.add_option("-i","--do_only_insert", action="store_true", dest="do_only_insert",default=False,
                                 help="it will only insert new exam in the cenir database (it will not modify existing record) ")
