@@ -1,14 +1,15 @@
 
 import common as c
 import numpy as np
-import os,math,pydicom,datetime,time
+import os,math,datetime,time
+import pydicom as dicom
 import dcmstack
 #from nibabel.spatialimages import HeaderDataError
 from dcmstack import extract , NiftiWrapper
 #import warnings
 from glob import glob
 from do_common import alpha_num_str
-import pdb
+
 class Exam_info:
     'Class to collected dicom information from dicom dirs'    
     
@@ -886,7 +887,7 @@ class Exam_info:
                 dicdcm =  dicom.read_file(dcm_path, force=force)
                 meta = extractor(dicdcm)
                 
-            except Exception, e:
+            except Exception as e:
                 if warn_on_except:
                     self.log.warning('dcmstack Skiping Bad dicom Error reading file %s: %s' % (dcm_path, str(e)))
                     n_ommited+=1
@@ -933,8 +934,8 @@ class Exam_info:
                 self.add_dirty_dcm_to_stack(dicom_stack,src_dcm)
             except dicom.filereader.InvalidDicomError: # not a dicom file
                 self.n_ommited += 1
-        print '%d files removed, considered as dummy/failed' % self.n_ommited
-        print '%d files removed, considered as repeat' % self.n_repeat
+        print('%d files removed, considered as dummy/failed' % self.n_ommited)
+        print('%d files removed, considered as repeat' % self.n_repeat)
         try:
             self.nii_wrp=dicom_stack.to_nifti_wrapper(self.inputs.voxel_order)
         finally:
@@ -1009,18 +1010,11 @@ class Exam_info:
             
         if convert_nii:
             try:
-		nii.to_filename(out_path)
-            	self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
+                nii.to_filename(out_path)
+                self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
 
-	    #except IOError as (errno, strerror):
-    	#	print "I/O error({0}): {1}".format(errno, strerror)
-	#	self.log.info('convert_niiii is %s stack is %d',convert_nii,stack_num)
-	#    except ValueError:
-	#    	print "Could not convert data to an integer."
-	#	self.log.info('convert_niiii is %s stack is %d',convert_nii,stack_num)
-	    except:
-	        #print "Unexpected error:", sys.exc_info()[0]
-		self.log.error('convert_niiii is %s stack is %d',convert_nii,stack_num)
+            except:
+                self.log.error('convert_niiii is %s stack is %d',convert_nii,stack_num)
 
             nii_wrp = NiftiWrapper(nii)
             path_tokens = out_path.split('.')
@@ -1070,59 +1064,51 @@ class Exam_info:
         if "StudyDate" not in meta:
         	study_date = ''
         else :
-        	study_date = str(meta["StudyDate"])
+            study_date = str(meta["StudyDate"])
 
         if study_date=='':
-			study_date = str(meta["SeriesDate"])
+            study_date = str(meta["SeriesDate"])
 
         study_date = study_date[0:4]+'_'+study_date[4:6] + '_' + study_date[6:8]
 
         # change exam field for GE data
-    	if 'Manufacturer' in meta:
-    		if 'GE MEDICAL SYSTEMS' in meta["Manufacturer"]:
-    			if 'ProtocolName' in meta and len(meta["ProtocolName"])>0 and meta["ProtocolName"]!= ' ':
-    				exa = alpha_num_str(meta["ProtocolName"])
-
-#        if "AcquisitionDate" not in meta : 
-#            str_date = study_date
-#        else:
-#            str_date = str(meta["AcquisitionDate"])
-#            str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
-#        
-#            #dicom bug only for DTI tensor : AcquisitionDate is bad and anterior
-#            if study_date > str_date : 
-#                str_date = study_date
-
-        if "SeriesDate" not in meta : 
-            str_date = study_date
-        else:
-            str_date = str(meta["SeriesDate"])
-            str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
-        
-            #dicom bug only for DTI tensor : AcquisitionDate is bad and anterior
-            if study_date > str_date : 
+        if 'Manufacturer' in meta:
+            
+            if 'GE MEDICAL SYSTEMS' in meta["Manufacturer"]:
+                if 'ProtocolName' in meta and len(meta["ProtocolName"])>0 and meta["ProtocolName"]!= ' ':
+                    exa = alpha_num_str(meta["ProtocolName"])
+    
+    
+            if "SeriesDate" not in meta : 
                 str_date = study_date
-                
-        
-        suj = str_date + '_' + alpha_num_str(meta["PatientName"])
-        try :
-            exaid = meta["StudyID"]
-        except:
-            exaid='1'
-                
-        if len(exaid)>1 : #Service patient has strange Eid
-            suj += '_E' + exaid
-        elif int(exaid)>1:
-            suj += '_E' + exaid
+            else:
+                str_date = str(meta["SeriesDate"])
+                str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
             
-        if 'SeriesDescription' not  in meta:
-            meta["SeriesDescription"] = 'nodescription'
+                #dicom bug only for DTI tensor : AcquisitionDate is bad and anterior
+                if study_date > str_date : 
+                    str_date = study_date
+                    
             
-        ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
-        if "ImageType" in meta and "P" in meta["ImageType"]:
-            ser = ser + '_phase'
-        
-        return(exa,suj,ser)
+            suj = str_date + '_' + alpha_num_str(meta["PatientName"])
+            try :
+                exaid = meta["StudyID"]
+            except:
+                exaid='1'
+                    
+            if len(exaid)>1 : #Service patient has strange Eid
+                suj += '_E' + exaid
+            elif int(exaid)>1:
+                suj += '_E' + exaid
+                
+            if 'SeriesDescription' not  in meta:
+                meta["SeriesDescription"] = 'nodescription'
+                
+            ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
+            if "ImageType" in meta and "P" in meta["ImageType"]:
+                ser = ser + '_phase'
+            
+            return(exa,suj,ser)
         
     def write_diff_to_file(self,nw,dest_dir):
         
@@ -1230,7 +1216,7 @@ class Exam_info:
         if p1.InstanceNumber != nb_of_dic_file:
             #print "taking first file as last"
             last_file = ff[0]
-            print last_file
+            print(last_file)
             
             
             p1=dicom.read_file(last_file,stop_before_pixels=True)
@@ -1345,14 +1331,14 @@ class Exam_info:
             (exa,suj,ser) = self.get_exam_suj_ser_from_dicom_meta(vol[1])
             strinfo += '\n Please check \t%s \t%s \t%s  \n %s'%(exa,suj,ser,vol[2])
             if self.send_mail:
-				try :
-					if len(self.send_mail_file)>0:
-						oname = self.send_mail_file + exa+'_'+suj+'_'+ser
-						c.send_mail_file(strinfo,oname)
-					else:
-						c.send_mail(strinfo,'Dicom files problem',self.smtp_pwd)
-				except Exception as e:
-					self.log.warning('FAIL to send mail because %s ',e)
+                try :
+                    if len(self.send_mail_file)>0:
+                        oname = self.send_mail_file + exa+'_'+suj+'_'+ser
+                        c.send_mail_file(strinfo,oname)
+                    else:
+                        c.send_mail(strinfo,'Dicom files problem',self.smtp_pwd)
+                except Exception as e:
+                    self.log.warning('FAIL to send mail because %s ',e)
         
         return first_file,last_file,corrupt
         
@@ -1617,7 +1603,7 @@ class Exam_info:
                                         else:
                                             shutil.copy2(flistin,foutlist)
                                 except:
-                                    print 'Tried to copy PETlistfile without success'
+                                    print( 'Tried to copy PETlistfile without success')
                         except:
                             pass
                             
