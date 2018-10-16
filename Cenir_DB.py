@@ -80,7 +80,7 @@ class Cenir_DB:
                 self.log.warning(" SKIPING import of %s \n because contained doublon",dicdir)
                 continue
 
-            print 'dicdir is %s'%(dicdir)
+            print('dicdir is %s'%(dicdir))
             exist_line = self.get_sql_exam_line(E,cur)
             if len(exist_line)>0 : 
                 self.log.info("Skiping (because exist) Exam insert of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['ExamName'],E['AcquisitionTime'])
@@ -239,7 +239,7 @@ class Cenir_DB:
         con,cur = self.open_sql_connection()
         sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_dir from exam where 1;";
         ff = open('./remove_missing_dicom_dir.sh','w+')
-        print sqlcmd
+        print(sqlcmd)
         cur.execute(sqlcmd)
         rows = cur.fetchall()
         self.log.info('checking %d rows',len(rows))
@@ -257,7 +257,7 @@ class Cenir_DB:
         con,cur = self.open_sql_connection()
         sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_sdir, dicom_dir, Sid from ExamSeries where 1;";
         ff = open('./remove_missing_dicom_dir.sh','w+')
-        print sqlcmd
+        print(sqlcmd)
         cur.execute(sqlcmd)
         rows = cur.fetchall()
         self.log.info('checking %d rows',len(rows))
@@ -499,9 +499,9 @@ class Cenir_DB:
             cur.execute(sqlcmd)
             
             if cur.rowcount==1:
-                print 'there may be a problem for ' + row['PatientsName']
+                print('there may be a problem for ' + row['PatientsName'])
             if cur.rowcount==0:
-                print 'Can not find ' + row['PatientsName']
+                print('Can not find ' + row['PatientsName'])
             
         con.close()
         conl.close()
@@ -865,7 +865,7 @@ class Cenir_DB:
                 
         sqlcmd = "UPDATE exam SET "
         for ff in self.db_exam_field :
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime : #or type(E[ff]) is unicode
                 if E[ff]=="NULL":
                     sqlcmd="%s %s=%s," % (sqlcmd,ff,E[ff])
                 else:
@@ -887,7 +887,7 @@ class Cenir_DB:
             
         sqlcmd = "UPDATE gg_examen SET "
         for ff in self.db_field_gg:
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime : #or type(E[ff]) is unicode
                 if E[ff]=="NULL":
                     sqlcmd="%s %s=%s," % (sqlcmd,ff,E[ff])
                 else:
@@ -943,7 +943,7 @@ class Cenir_DB:
         sqlcmd = sqlcmd[:-1]+") VALUES("
         
         for ff in self.db_exam_field :
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode :
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime : #or type(E[ff]) is unicode 
                 if E[ff]=="NULL":
                     sqlcmd="%s %s," % (sqlcmd,E[ff])
                 else:
@@ -969,7 +969,7 @@ class Cenir_DB:
         sqlcmd = sqlcmd[:-1]+") VALUES("
     
         for ff in self.db_field_gg:
-            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime or type(E[ff]) is unicode:
+            if type(E[ff]) is str or type(E[ff]) is datetime.date or type(E[ff]) is datetime.datetime : #or type(E[ff]) is unicode
                 if E[ff]=="NULL":
                     sqlcmd="%s %s," % (sqlcmd,E[ff])
                 else:
@@ -1035,7 +1035,7 @@ class Cenir_DB:
             if key[0]=='_':
                 continue  #skip hidden field
             
-            if type(val) is str or type(val) is unicode :
+            if type(val) is str : #or type(val) is unicode 
                 if val.find("NULL")>=0:
                     sqlcmd = "%s (NULL)," % (sqlcmd)
                 else:
@@ -1046,7 +1046,7 @@ class Cenir_DB:
             elif type(val) is datetime.date or type(val) is datetime.datetime :
                 sqlcmd = "%s '%s'," % (sqlcmd,val)
                     
-            elif type(val) is int or type(val) is float or type(val) is long:
+            elif type(val) is int or type(val) is float : #or type(val) is long
                 sqlcmd = "%s %f," % (sqlcmd,val)
             elif val is None:
                 sqlcmd = "%s (NULL)," % (sqlcmd)
@@ -1066,7 +1066,7 @@ class Cenir_DB:
             if key[0]=='_':
                 continue  #skip hidden field
             
-            if type(val) is str or type(val) is unicode :
+            if type(val) is str  : #or type(val) is unicode
                 if val.find("NULL")>=0:
                     sqlcmd = "%s %s = (NULL)," % (sqlcmd,key)
                 else:
@@ -1076,7 +1076,7 @@ class Cenir_DB:
             elif type(val) is datetime.date or type(val) is datetime.datetime :
                 sqlcmd = "%s %s = '%s'," % (sqlcmd,key,val)
                     
-            elif type(val) is int or type(val) is float or type(val) is long:
+            elif type(val) is int or type(val) is float : #or type(val) is long
                 sqlcmd = "%s %s = %f," % (sqlcmd,key,val)
             elif val is None:
                 sqlcmd = "%s %s = (NULL)," % (sqlcmd,key)
