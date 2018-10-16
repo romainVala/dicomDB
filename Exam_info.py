@@ -158,9 +158,10 @@ class Exam_info:
             else:                
                 dicinfo["ExamName"]="Atrier"
         
-        elif len(p1.StudyDescription)>0:
-            dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
-            dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
+        elif "StudyDescription" in p1:
+            if len(p1.StudyDescription)>0:
+                dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
+                dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
         
         dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
         
@@ -169,13 +170,18 @@ class Exam_info:
         	dstr = p1.AcquisitionDate
         else :
         	dstr = p1.StudyDate
-        	
-        tstr = p1.AcquisitionTime
-        #dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
+
+	if 'AcquisitionTime' in p1:
+		tstr = p1.AcquisitionTime
+	else:
+		tstr = p1.StudyTime
+
+	#dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
 
         dstr = p1.StudyDate
         tstr = p1.StudyTime
+        if len(tstr)==0: tstr = p1.AcquisitionTime
         dicinfo["StudyTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
         
         if dicinfo["AcquisitionTime"] < dicinfo["StudyTime"] : #bug for TENSOR series
@@ -222,7 +228,7 @@ class Exam_info:
 
             dicinfo["ExamDuration"] = int(math.ceil((deltadur + dur)/60.))
         
-        dicinfo["PatientsWeight"] = int(p1.PatientsWeight)        
+        if 'PatientsWeight' in p1: dicinfo["PatientsWeight"] = int(p1.PatientsWeight)        
         dstr = p1.PatientsBirthDate
         if len(p1.PatientBirthDate)>0:
             dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
@@ -268,15 +274,16 @@ class Exam_info:
             #raise NameError('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
             self.log.warning('this Dicom file is not from TrioTim, Verio or Signa PETMR ')
         
-        if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
-            dicinfo["eid"] = dicinfo["StudyDescription"][6:]
-            dicinfo["facturable"]=1
-        elif  dicinfo["StudyDescription"].startswith("PRISMA_") :
-            dicinfo["eid"] = dicinfo["StudyDescription"][7:]
-            dicinfo["facturable"]=1
-        else:
-            dicinfo["eid"] = dicinfo["StudyDescription"]
-            dicinfo["facturable"]=0
+        if "StudyDescription" in dicinfo: 
+            if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
+                dicinfo["eid"] = dicinfo["StudyDescription"][6:]
+                dicinfo["facturable"]=1
+            elif  dicinfo["StudyDescription"].startswith("PRISMA_") :
+                dicinfo["eid"] = dicinfo["StudyDescription"][7:]
+                dicinfo["facturable"]=1
+            else:
+                dicinfo["eid"] = dicinfo["StudyDescription"]
+                dicinfo["facturable"]=0
           
         return dicinfo
         
@@ -360,6 +367,8 @@ class Exam_info:
         
         dstrs = p1.StudyDate
         tstrs = p1.StudyTime
+        if len(tstrs)==0: tstrs = p1.AcquisitionTime
+
         dicStudyTime = datetime.datetime(int(dstrs[0:4]),int(dstrs[4:6]),int(dstrs[6:]),int(tstrs[0:2]),int(tstrs[2:4]),int(tstrs[4:6]))
         
         if dicinfo["AcqTime"] < dicStudyTime : #bug for TENSOR series
@@ -411,7 +420,11 @@ class Exam_info:
         if 'DERIVED' in p1.ImageType and 'SPEC' in p1.ImageType and 'SECONDARY' in p1.ImageType :
             dicinfo["SeqName"] = "spectroCSI"            
             makeitshort=True
-            
+
+        if 'PHYSIO' in p1.ImageType :
+            dicinfo["SeqName"] = "physio"            
+            makeitshort=True
+
                     
         if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
@@ -1039,7 +1052,11 @@ class Exam_info:
             if "ProtocolName" not in meta :
                 
                 exa = "ServicePatient"
-                str_date = str(meta["AcquisitionDate"])
+                if "AcquisitionDate" not in meta:
+                    str_date = str(meta["StudyDate"])
+                else : 
+                    str_date = str(meta["AcquisitionDate"])
+
                 str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
                 suj = str_date + '_' + alpha_num_str(meta["PatientName"])            
                 ser = 'S%02d' % meta.get('SeriesNumber')
