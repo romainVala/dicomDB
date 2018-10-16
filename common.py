@@ -130,7 +130,7 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
   """
   strline=" ".join(commandline)
   if verbose:
-    print strline
+    print(strline)
 
   # Check newer input file
   itime=-1 # numer of seconds since epoch
@@ -139,14 +139,14 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
     if isinstance(inputs, basestring): # check if input is only string and not list
       if not os.path.exists(inputs):
         inputs_exist=False
-        print " ** Error: Input does not exist! :: "+str(inputs)
+        print(" ** Error: Input does not exist! :: "+str(inputs))
       else:
         itime=os.path.getmtime(inputs)
     else:
       for i in inputs:
         if not os.path.exists(i):
           inputs_exist=False
-          print " ** Error: One input does not exist! :: "+i
+          print(" ** Error: One input does not exist! :: "+i)
         else:
           timer=os.path.getmtime(i)
           if timer < itime or itime < 0:
@@ -173,16 +173,16 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
   if outExists:
     if timecheck and itime > 0 and otime > 0 and otime < itime:
       if verbose:
-        print " -- Warning: Output exists but older than input! Redoing command"
-        print "     otime "+str(otime)+" < itime "+str(itime)
+        print(" -- Warning: Output exists but older than input! Redoing command")
+        print("     otime "+str(otime)+" < itime "+str(itime))
     else:
       if verbose:
-        print " -- Skipping: Output Exists"
+        print(" -- Skipping: Output Exists")
       return 0
   
   #Check if inputs exist
   if inputs is not None and inputs_exist is False:
-    print " ** Error  in "+commandline[0]+": The input does not exists! :: "+str(inputs)
+    print(" ** Error  in "+commandline[0]+": The input does not exists! :: "+str(inputs))
     return -1
 
   # run command
@@ -199,11 +199,11 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
     else:
       outvalue=call(commandline)
   except OSError:
-      print " XX ERROR: unable to find executable "+commandline[0]
+      print(" XX ERROR: unable to find executable "+commandline[0])
       return -1
 
   if not outvalue==0:
-    print " ** Error  in "+commandline[0]+": Executable output was "+str(outvalue)
+    print(" ** Error  in "+commandline[0]+": Executable output was "+str(outvalue))
     return outvalue
 
   outExists=False
@@ -219,7 +219,7 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
 
   if not outExists:
     if verbose:
-      print " ** Error  in "+commandline[0]+": Error: output does not exist!"
+      print(" ** Error  in "+commandline[0]+": Error: output does not exist!")
       return -1
 
   # return command output
@@ -241,7 +241,7 @@ def cmdWoutput(commandline,clfile=None,verbose=True):
   """
 
   if verbose:
-    print " ".join(commandline)
+    print(" ".join(commandline))
 
   if clfile is not None:
     f=open(clfile,'a')
@@ -253,7 +253,7 @@ def cmdWoutput(commandline,clfile=None,verbose=True):
   try:
     lines=Popen(cline,stdout=PIPE).communicate()
   except OSError:
-      print " XX ERROR: unable to find executable!"
+      print(" XX ERROR: unable to find executable!")
       return -1
   return lines[0] # we ignore the error output :: lines[1]
 
@@ -320,7 +320,7 @@ def get_subdir_regex(dirs,regex,verbose=False):
   if isinstance(dirs,basestring):
     dirs=[dirs]
   elif len(dirs)==0:
-    print " ** NO directories found!!"
+    print(" ** NO directories found!!")
     return []
   if isinstance(regex,basestring):
     regex=[regex]
@@ -360,7 +360,7 @@ def get_subdir_regex(dirs,regex,verbose=False):
 
     if verbose:
         for d in finaldirs:
-            print d
+            print(d)
             
     return finaldirs
 
@@ -378,7 +378,7 @@ def get_subdir_regex_files(dirs,regex,opts={"items":-1}):
   if isinstance(dirs,basestring):
     dirs=[dirs]
   elif len(dirs)==0:
-    print " ** Error: No dirs found!!"
+    print(" ** Error: No dirs found!!")
     return []
     
   if isinstance(regex,basestring):
@@ -421,7 +421,7 @@ def get_subdir_regex_files(dirs,regex,opts={"items":-1}):
         i=i+1
     
       if items>0 and i != items:
-          print "WARNING found %d item and not %s in %s"%(i,items,d)
+          print("WARNING found %d item and not %s in %s"%(i,items,d))
       
 
     return finaldirs
@@ -476,16 +476,16 @@ def readList(listfile):
     for l in lines:
       sp=l[:-1].split(",")
       if len(sp) is not 2:
-        print " -- skipping line"
+        print(" -- skipping line")
         continue       
       id=sp[0]
       path=sp[1]
       if id in dico:
-          print " ** ERROR: Duplicated id in the list: "+id+". Repair the list file."
+          print(" ** ERROR: Duplicated id in the list: "+id+". Repair the list file.")
           return {}
       dico[id]=path
   except IOError:
-    print " -- Error opening "+listfile
+    print(" -- Error opening "+listfile)
     return dico
   return dico
 
@@ -522,10 +522,10 @@ def readxls_relecture_files(filename,verbose=False):
                 suj_list.append(values)
             else:
                 if s.cell(row,2).ctype:
-                    print ' warning in %s subject define but not reviewed '%(filename)
+                    print(' warning in %s subject define but not reviewed '%(filename))
                 
     return suj_list
     
     for v in suj_list:
-        print v['proto']+' sujname '+v['sujname']
+        print(v['proto']+' sujname '+v['sujname'])
             

@@ -183,8 +183,8 @@ class doit:
     
     def options_to_str(self):
         optstr = ''
-        for k,v in vars(self.options).iteritems():
-            optstr += '%-12s: %s\n'%(k,v)
+        for v in vars(self.options):
+            optstr += '%-12s: %s\n'%(v,getattr(self.options,v))
         return optstr
     
     def handel_main_exception(self,e):
