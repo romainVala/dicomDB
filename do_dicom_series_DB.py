@@ -11,7 +11,7 @@ import Exam_info
 import Cenir_DB
 import os
 import sys
-import pdb
+
 if __name__ == '__main__':
     
     doit = do_common.doit()
