@@ -8,8 +8,8 @@ import Cenir_DB
 import sys
 
 #pour le send dicom (check)
-from netdicom.applicationentity import AE
-from netdicom.SOPclass import *
+from pynetdicom3 import AE
+#from netdicom.SOPclass import *
 from pydicom.dataset import Dataset, FileDataset
 from pydicom.uid import ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian
 #import netdicom
@@ -39,15 +39,15 @@ def add_options(parser):
                                 
 # call back
 def OnAssociateResponse(association):
-    print "Association response received"
+    print("Association response received")
 
 
 def OnAssociateRequest(association):
-    print "Association resquested"
+    print("Association resquested")
     return True
 
 def OnReceiveStore(SOPClass, DS):
-    print "Received C-STORE", DS.PatientName
+    print("Received C-STORE", DS.PatientName)
     try:
         # do something with dataset. For instance, store it.
         file_meta = Dataset()
@@ -58,7 +58,7 @@ def OnReceiveStore(SOPClass, DS):
         ds = FileDataset(filename, {}, file_meta=file_meta, preamble="\0" * 128)
         ds.update(DS)
         ds.save_as(filename)
-        print "File %s written" % filename
+        print("File %s written" % filename)
     except:
         pass
     # must return appropriate status
@@ -273,7 +273,7 @@ class Results_DB:
         # loop on patients
         for pp in patients:
             if pp.PatientName=="Service Patient":
-                print "skiping Service Patient"
+                print("skiping Service Patient")
                 continue
         
             #self.log.info("Checking %s ",pp.PatientName)
@@ -408,7 +408,7 @@ class Results_DB:
             cmde = 'cd ' + suj
             for ser in ser_dir:
                 commandline = cmde  + '; tar -czf ' + ser + '.tar.gz'
-                print commandline
+                print(commandline)
                 
 #            try:
 #                outvalue=call(commandline)
