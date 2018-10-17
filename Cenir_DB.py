@@ -408,9 +408,9 @@ class Cenir_DB:
                     strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
 
                     #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
-                    f1.write(('mkdir /export/dataCENIR/dicom/doublon_dicom/%s \n'%(suj)))
-                    f1.write(('mv /export/dataCENIR/dicom/dicom_raw/%s/%s/%s /export/dataCENIR/dicom/doublon_dicom/%s\n'%(prot,suj,dicser,suj)))
-                    f1.write(('cd /export/dataCENIR/dicom/nifti_raw/%s/%s/; rm -rf %s \n'%(prot,suj,dicser)))
+                    f1.write(('mkdir /network/lustre/iss01/cenir/raw/irm/doublon_dicom/%s \n'%(suj)))
+                    f1.write(('mv /network/lustre/iss01/cenir/raw/irm/dicom_raw/%s/%s/%s /network/lustre/iss01/cenir/raw/irm/doublon_dicom/%s\n'%(prot,suj,dicser,suj)))
+                    f1.write(('cd /network/lustre/iss01/cenir/raw/irm/nifti_raw/%s/%s/; rm -rf %s \n'%(prot,suj,dicser)))
                     f1.write(('mkdir /nasDicom/doublon_dicom/%s \n'%(suj)))
                     f1.write(('mv /nasDicom/dicom_raw/%s/%s/%s /nasDicom/doublon_dicom/%s\n\n'%(prot,suj,dicser,suj)))
 
@@ -608,7 +608,7 @@ class Cenir_DB:
                         strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
         
                         #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
-                        f11.write(('cd /export/dataCENIR/dicom/dicom_raw/;cd %s; mv %s /export/dataCENIR/dicom/doublon_dicom/\n'%(prot,suj)))
+                        f11.write(('cd /network/lustre/iss01/cenir/raw/irm/dicom_raw/;cd %s; mv %s /network/lustre/iss01/cenir/raw/irm/doublon_dicom/\n'%(prot,suj)))
                         f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
                         f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
                         
@@ -630,7 +630,7 @@ class Cenir_DB:
                                 
                                 pp,suj = os.path.split(niftidir)
                                 pp,prot = os.path.split(pp)
-                                pp='/export/dataCENIR/dicom/nifti_raw'
+                                pp='/network/lustre/iss01/cenir/raw/irm/nifti_raw'
                                 if niftidir_ok == niftidir:
                                     strinfo += "\nSTRANGE different dicom dir lead to the same nifti dir %s : do not delete"%(niftidir)
                                 else :                
@@ -758,9 +758,9 @@ class Cenir_DB:
                         protok = drows[sind[-1]]['ExamName']                 
                         
                         #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
-                        f11.write('cd /export/dataCENIR/dicom/doublon_dicom/; mv %s /export/dataCENIR/dicom/dicom_raw/%s/\n'%(sujok,protok))
-                        f11.write(('cd /export/dataCENIR/dicom/dicom_raw/;cd %s; mv %s /export/dataCENIR/dicom/doublon_dicom/\n\n'%(prot,suj)))
-                        f5.write('do_dicom_series_DB.py -c import_db --input_dir=/export/dataCENIR/dicom/dicom_raw/%s/%s\n'%(protok,sujok))
+                        f11.write('cd /network/lustre/iss01/cenir/raw/irm/doublon_dicom/; mv %s /network/lustre/iss01/cenir/raw/irm/dicom_raw/%s/\n'%(sujok,protok))
+                        f11.write(('cd /network/lustre/iss01/cenir/raw/irm/dicom_raw/;cd %s; mv %s /network/lustre/iss01/cenir/raw/irm/doublon_dicom/\n\n'%(prot,suj)))
+                        f5.write('do_dicom_series_DB.py -c import_db --input_dir=/network/lustre/iss01/cenir/raw/irm/dicom_raw/%s/%s\n'%(protok,sujok))
                         f2.write(('cd /nasDicom/doublon_dicom/; mv %s /nasDicom/dicom_raw/%s/\n'%(sujok,protok)))
                         f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
                         f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
@@ -783,7 +783,7 @@ class Cenir_DB:
                                 
                                 pp,suj = os.path.split(niftidir)
                                 pp,prot = os.path.split(pp)
-                                pp='/export/dataCENIR/dicom/nifti_raw'
+                                pp='/network/lustre/iss01/cenir/raw/irm/nifti_raw'
                                 if niftidir_ok == niftidir:
                                     strinfo += "\nSTRANGE different dicom dir lead to the same nifti dir %s : do not delete"%(niftidir)
                                 else :                
