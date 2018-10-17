@@ -72,8 +72,8 @@ class doit:
         return parser
 
     def add_options_parse_data(self,parser) :
-        parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/export/dataCENIR/dicom/dicom_raw',
-                                    help="full path to the root directorie dicom files (where liste of protocol are) default='/export/home/CENIR/dicom_raw'")
+        parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw',
+                                    help="full path to the root directorie dicom files (where liste of protocol are) default=/network/lustre/iss01/cenir/raw/irm/dicom_raw'")
         parser.add_option("-p","--proto_reg", action="store", dest="proto_reg", default='.*',
                                     help="regular expression to select protocol dir default='.*' ")
         parser.add_option("-s","--suj_reg", action="store", dest="suj_reg", default='.*',
@@ -106,7 +106,7 @@ class doit:
                                     help="This will print duplicate exam in the given search ")
         parser.add_option("--dicom_ext", action ="store",dest="dicom_ext",default='*.dic',
                                   help="Dicom file extention default is *.dic")
-        parser.add_option("--nifti_dir", action ="store",dest="nifti_dir",default='/export/dataCENIR/dicom/nifti_raw',
+        parser.add_option("--nifti_dir", action ="store",dest="nifti_dir",default='/network/lustre/iss01/cenir/raw/irm/nifti_raw',
                                   help="Root output directorie for nifti files")
         parser.add_option("--input_dir", action ="store",dest="input_dir",default='',
                                   help="if specify this will get (recursivly) all dicom file from this directory")

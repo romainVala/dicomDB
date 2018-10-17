@@ -20,8 +20,8 @@ import glob
 
 def add_options(parser):
 
-    parser.add_option("--res_dir", action="store_true", dest="res_dir",default='/export/dataCENIR/dicom/nifti_proc/',
-                                help="result rootdir default /export/dataCENIR/dicom/nifti_proc/")
+    parser.add_option("--res_dir", action="store_true", dest="res_dir",default='/network/lustre/iss01/cenir/raw/irm/nifti_proc/',
+                                help="result rootdir default /network/lustre/iss01/cenir/raw/irm/nifti_proc/")
     parser.add_option("--set_results", action="store_true", dest="set_results",default=False,
                                 help="parse the serie database an set the results table ")
 

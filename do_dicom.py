@@ -692,8 +692,8 @@ if __name__ == '__main__':
     # Parse input arguments
     parser=OptionParser(usage=usage)
     #parser.add_option("-h", "--help", action="help")
-    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/export/dataCENIR/dicom/dicom_raw/',
-                                help="full path to the directorie of protocol default='/export/dataCENIR/dicom/dicom_raw/'")
+    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/',
+                                help="full path to the directorie of protocol default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/'")
     parser.add_option("-p","--proto_regex", action="store", dest="proto_reg", default='.*',
                                 help="regular expression to select protocol dir default='.*' ")
     parser.add_option("-s","--suj_regex", action="store", dest="suj_reg", default='.*',
@@ -708,8 +708,8 @@ if __name__ == '__main__':
                                 help="if define will to twice the DB update ")
     parser.add_option("-t","--test_data_base", action="store_true", dest="test_db",default=False,
                                 help="Just write the log of what changes should be donne in the cenir database (for the selected exams). It won't take the -b option ")
-    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/export/dataCENIR/dicom/dicom_raw/log_update_db.log',
-                                help="full path to the log file default='/export/dataCENIR/dicom/log_update_db.log'")
+    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/log_update_db.log',
+                                help="full path to the log file default='/network/lustre/iss01/cenir/raw/irm/log_update_db.log'")
     parser.add_option("-i","--do_only_insert", action="store_true", dest="do_only_insert",default=False,
                                 help="it will only insert new exam in the cenir database (it will not modify existing record) ")
     parser.add_option("-f","--find_double", action="store_true", dest="find_double",default=False,
@@ -739,9 +739,10 @@ if __name__ == '__main__':
         import datetime as da
         import time
         today = da.datetime.today()    
-        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/export/dataCENIR/dicom/log_update_db.log"))
+#        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss01/cenir/raw/irm/log_update_db.log"))
+        logtime =  da.datetime.fromtimestamp(os.path.getmtime(options.logFile))
         nbdays = today - logtime;
-        nbdays = nbdays.days + 1
+        nbdays = nbdays.days + 3
         
         log.info("\n ********************************\n Searching exam older than %s days \n",(nbdays))
         d = c.get_all_newer_subdir(options.rootdir,1,nbdays=nbdays)
