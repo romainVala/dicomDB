@@ -1438,8 +1438,8 @@ class Exam_info:
                     ser_one_exam.append(ser_ok[ns])    
                     actime_one_exam.append(actime[ns])
             aa=zip(actime_one_exam,ser_one_exam)
-            aa.sort()
-            actime_one_exam,ser_one_exam = zip(*aa)
+            #aa.sort()
+            actime_one_exam,ser_one_exam = zip(*sorted(aa))
             series_list.append(ser_one_exam)
 
         return series_list
