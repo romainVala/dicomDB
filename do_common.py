@@ -242,8 +242,8 @@ def alpha_num_str(stri):
     if len(stri)==0:
         return stri
         
-    if type(stri) is not unicode:
-        stri = make_unicode(stri)
+#    if type(stri) is not unicode:
+#        stri = make_unicode(stri)
     
 #    if type(stri) is str:
 #        stri=stri.replace('\xe9','e')
@@ -263,7 +263,8 @@ def alpha_num_str(stri):
     #correspond au caractere a chapeau
     stri=stri.replace(u'\xe2','a')
     #correspond au caractere a chapeau
-    stri=stri.replace(make_unicode('/'), '_')
+    #stri=stri.replace(make_unicode('/'), '_')
+    stri=stri.replace('/', '_')
     #convert to string and ignore other strange caractere
     stri=stri.encode('utf-8').decode('ascii','ignore')
     stri = str(stri)
@@ -290,8 +291,8 @@ def alpha_num_str_min(stri):
     from dcmstack import extract
 #    import re
     
-    if type(stri) is not unicode:
-        stri = make_unicode(stri)
+#    if type(stri) is not unicode:
+#        stri = make_unicode(stri)
     
 #    if type(stri) is str:
 #        stri=stri.replace('\xe9','e')
