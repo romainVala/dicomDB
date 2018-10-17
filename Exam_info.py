@@ -233,9 +233,6 @@ class Exam_info:
             dicinfo["ExamDuration"] = int(math.ceil((deltadur + dur)/60.))
         
         if 'PatientWeight' in p1: dicinfo["PatientWeight"] = int(p1.PatientWeight)        
-        dstr = p1.PatientBirthDate
-        if len(p1.PatientBirthDate)>0:
-            dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
         
         if 'PatientAge' not in p1:
             dicinfo["PatientsAge"] = "NULL"
@@ -245,6 +242,11 @@ class Exam_info:
             
         if "PatientBirthDate" not in dicinfo:
             dicinfo["PatientsBirthDate"]="NULL"
+        else:
+            dstr = p1.PatientBirthDate
+            if len(p1.PatientBirthDate)>0:
+                dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
+
             
         if "PatientSex" not in p1:
             p1.PatientsSex='Unknown'
