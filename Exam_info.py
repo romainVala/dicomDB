@@ -167,7 +167,7 @@ class Exam_info:
                 dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
                 dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
         
-        dicinfo["PatientsName"] = alpha_num_str(p1.PatientsName)
+        dicinfo["PatientsName"] = alpha_num_str(p1.PatientName)
         
         #appen date to SacisitionTime and format time
         if 'AcquisitionDate' in p1:
@@ -432,7 +432,7 @@ class Exam_info:
                     
         if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
-            or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientsName \
+            or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientName \
             or 'MOCO' in p1.ImageType or 'DUMMY IMAGE' in p1.ImageType or 'TTEST' in p1.ImageType :
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
@@ -1388,7 +1388,7 @@ class Exam_info:
             if "ImageType" in ps:
                 if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
-                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
+                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientName \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
