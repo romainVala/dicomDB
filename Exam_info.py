@@ -137,9 +137,9 @@ class Exam_info:
                 dicinfo["ExamNum"] = 1
             else:                       
                 try:
-		    dicinfo["ExamNum"] = int(p1.StudyID)
-		except Exception as e:
-		    dicinfo["ExamNum"] = p1.StudyID
+                    dicinfo["ExamNum"] = int(p1.StudyID)
+                except Exception as e:
+                    dicinfo["ExamNum"] = p1.StudyID
 
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
