@@ -742,7 +742,7 @@ if __name__ == '__main__':
 #        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss01/cenir/raw/irm/log_update_db.log"))
         logtime =  da.datetime.fromtimestamp(os.path.getmtime(options.logFile))
         nbdays = today - logtime;
-        nbdays = nbdays.days + 1
+        nbdays = nbdays.days + 3
         
         log.info("\n ********************************\n Searching exam older than %s days \n",(nbdays))
         d = c.get_all_newer_subdir(options.rootdir,1,nbdays=nbdays)
