@@ -739,7 +739,8 @@ if __name__ == '__main__':
         import datetime as da
         import time
         today = da.datetime.today()    
-        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss01/cenir/raw/irm/log_update_db.log"))
+#        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss01/cenir/raw/irm/log_update_db.log"))
+        logtime =  da.datetime.fromtimestamp(os.path.getmtime(options.logFile))
         nbdays = today - logtime;
         nbdays = nbdays.days + 1
         
