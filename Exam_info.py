@@ -14,7 +14,7 @@ class Exam_info:
     
     def __init__(self,verbose=True,log=0,
                  nifti_dir='/network/lustre/iss01/cenir/raw/irm/nifti_raw/',
-                 dicom_dir = '/export/home/romain.valabregue/dicom_raw',
+                 dicom_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw',
                  dicom_ext = '*.dic', send_mail = False,send_mail_file= '',
                  smtp_pwd= '',skip_derived_series=True):
                   
