@@ -1388,7 +1388,7 @@ class Exam_info:
             if "ImageType" in ps:
                 if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
-                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientName \
+                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientName.original_string \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
