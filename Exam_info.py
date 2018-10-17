@@ -167,18 +167,18 @@ class Exam_info:
                 dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
                 dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
         
-        dicinfo["PatientsName"] = alpha_num_str(p1.PatientName)
+        dicinfo["PatientsName"] = alpha_num_str(p1.PatientName.original_string)
         
         #appen date to SacisitionTime and format time
         if 'AcquisitionDate' in p1:
-        	dstr = p1.AcquisitionDate
+            dstr = p1.AcquisitionDate
         else :
-        	dstr = p1.StudyDate
+            dstr = p1.StudyDate
 
-        	if 'AcquisitionTime' in p1:
-        		tstr = p1.AcquisitionTime
-        	else:
-        		tstr = p1.StudyTime
+        if 'AcquisitionTime' in p1:
+            tstr = p1.AcquisitionTime
+        else:
+            tstr = p1.StudyTime
 
         	#dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
@@ -759,7 +759,7 @@ class Exam_info:
                 
         mf =dcmstack.make_key_regex_filter(['nothingtoremove'])
 
-        for v in pg.itervalues():
+        for v in pg.values():
 #            my_stack = dcmstack.DicomStack(meta_filter=mf,time_order='AcquisitionTime')
             my_stack = dcmstack.DicomStack(meta_filter=mf,time_order='InstanceNumber')
             n_ommited=0
@@ -1303,7 +1303,7 @@ class Exam_info:
         ifirst = 10000;
         ilast = 0;
         nb_dic_file=0
-        for v in pg.itervalues():
+        for v in pg.values():
             for vol in v: #vol[0] champs de pydicom vol[1] ordererd dict
                 i = int(vol[0].InstanceNumber)
                 nb_dic_file+=1
