@@ -110,8 +110,8 @@ if __name__ == '__main__':
     # Parse input arguments
     parser=OptionParser(usage=usage)
     #parser.add_option("-h", "--help", action="help")
-    parser.add_option("-r","--recupdir", action="store", dest="recupdir", default='/export/data/users/romain.valabregue/recup/dicom_raw',
-                      help="full path to the root directorie dicom files default /export/data/users/romain.valabregue/recup/dicom_ra")
+    parser.add_option("-r","--recupdir", action="store", dest="recupdir", default=None,
+                      help="full path to the root directorie dicom files default current dir")
 
     parser.add_option("-l","--logfile", action="store", dest="logfile", default='',
                       help="full path to the log file default=''")
@@ -122,6 +122,8 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     recup_dir = options.recupdir
+    if recup_dir is None:
+        recup_dir = os.getcwd
     #dicom_dir0 = '/nasDicom/dicom_raw/'
     dicom_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw'
 
