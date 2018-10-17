@@ -175,12 +175,12 @@ class Exam_info:
         else :
         	dstr = p1.StudyDate
 
-	if 'AcquisitionTime' in p1:
-		tstr = p1.AcquisitionTime
-	else:
-		tstr = p1.StudyTime
+        	if 'AcquisitionTime' in p1:
+        		tstr = p1.AcquisitionTime
+        	else:
+        		tstr = p1.StudyTime
 
-	#dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
+        	#dicinfo["AcquisitionTime"] = dstr[0:4] + "-" + dstr[4:6] + "-" + dstr[6:] + " " + tstr[0:2] + ":" + tstr[2:4] + ":" + tstr[4:6]
         dicinfo["AcquisitionTime"] = datetime.datetime(int(dstr[0:4]),int(dstr[4:6]),int(dstr[6:]),int(tstr[0:2]),int(tstr[2:4]),int(tstr[4:6]))
 
         dstr = p1.StudyDate
