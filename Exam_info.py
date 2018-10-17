@@ -214,7 +214,7 @@ class Exam_info:
         else:
             self.log.error("last serie %s has no duration set (duration old way)" ,last_ser['SName'])
             p2=dicom.read_file(dic2,stop_before_pixels=True)        
-            if p2.has_key(0x051100a):
+            if 0x051100a in p2:
                 dur = self.get_series_duration_from_siemens_tag(p2[0x051100a].value)    
             elif [0x19,0x105a] in p2:
                 dur= p2[0x19,0x105a].value/1000000
@@ -407,7 +407,7 @@ class Exam_info:
         
         makeitshort=False
         #make it short for special images
-        if p1.has_key(0x291008):
+        if 0x291008 in p1:
             csatype = p1[0x291008].value
             
             if csatype.find('SPEC NUM')>=0:
@@ -432,7 +432,7 @@ class Exam_info:
                     
         if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
-            or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientName \
+            or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientName.original_string \
             or 'MOCO' in p1.ImageType or 'DUMMY IMAGE' in p1.ImageType or 'TTEST' in p1.ImageType :
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
@@ -577,15 +577,15 @@ class Exam_info:
                 if 'CsaImage.ScanningSequence' in meta:
                     scan_seq = my_list_to_str(meta.get('CsaImage.ScanningSequence')) 
                     
-            if meta.has_key('InversionTime'):
+            if 'InversionTime' in meta:
                 dicinfo["TI"] = int(meta.get('InversionTime'))                
             
-            if meta.has_key('ScanningSequence'):
+            if 'ScanningSequence' in meta:
                 scan_seq = my_list_to_str(meta.get('ScanningSequence'))
             else :
             	scan_seq = ''                   
             
-            if meta.has_key('MRAcquisitionType'):
+            if 'MRAcquisitionType' in meta:
                 acquisitionType = str(meta.get('MRAcquisitionType')) #may be empty
             else:
                 acquisitionType = ''
@@ -595,7 +595,7 @@ class Exam_info:
              dicinfo["Orient"] = p1[0x051100e].value
 
         
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'):
+        if'CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec' in meta :
             dicinfo["Duration"]  = int(meta.get('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'))
         elif [0x19,0x105a] in p1:
             if isinstance(p1[0x19,0x105a].value, str):
@@ -608,45 +608,45 @@ class Exam_info:
 #        else:
 #            if p1.has_key(0x051100a):
 #                dicinfo["Duration"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
-        if p1.has_key(0x051100a):
+        if 0x051100a in p1:
             try:
                 
                 dicinfo["Duration2"] = self.get_series_duration_from_siemens_tag(p1[0x051100a].value)            
             except: 
                 pass
         
-        if meta.has_key('CsaImage.ImaCoilString'):
+        if 'CsaImage.ImaCoilString' in meta:
             dicinfo["CoilName"] = str(meta.get('CsaImage.ImaCoilString'))
-        elif meta.has_key('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'):
+        elif 'CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID' in meta:
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.asCoilSelectMeas[0].asList[0].sCoilElementID.tCoilID'))
-        elif meta.has_key('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'):  #for prisma it seems to be an other field
+        elif 'CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion' in meta:  #for prisma it seems to be an other field
             dicinfo["CoilName"] = str(meta.get('CsaSeries.MrPhoenixProtocol.sCoilSelectMeas.sCoilStringForConversion'))
         else:
             dicinfo["CoilName"] = "NULL"
 
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.tSequenceFileName'):   
+        if 'CsaSeries.MrPhoenixProtocol.tSequenceFileName' in meta: 
             dicinfo["SeqName2"] = str(meta.get('CsaSeries.MrPhoenixProtocol.tSequenceFileName'))
             dicinfo["SeqName2"] = scan_seq + dicinfo["SeqName2"] + '_' + acquisitionType
         
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].dInPlaneRot'):
+        if 'CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].dInPlaneRot' in meta:
             dicinfo["PhaseAngle"] = float(meta.get('CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].dInPlaneRot'))
         else:
             dicinfo["PhaseAngle"] = 0
              
-        if meta.has_key('CsaImage.PhaseEncodingDirectionPositive'):
+        if 'CsaImage.PhaseEncodingDirectionPositive' in meta :
             phase_sign = int(meta['CsaImage.PhaseEncodingDirectionPositive'])
             if phase_sign>0:
                 dicinfo["PhaseDir"] += '+'
             else:
                 dicinfo["PhaseDir"] += '-'
         
-        if meta.has_key('CsaImage.MosaicRefAcqTimes'):
+        if 'CsaImage.MosaicRefAcqTimes' in meta:
             dicinfo["SliceTime"] = str( meta.get('CsaImage.MosaicRefAcqTimes') )
         
-        if meta.has_key('CsaSeries.AbsTablePosition'):
+        if 'CsaSeries.AbsTablePosition' in meta:
             dicinfo["TablePos"] = int( meta.get('CsaSeries.AbsTablePosition') )
         
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.sPat.ucPATMode'):
+        if 'CsaSeries.MrPhoenixProtocol.sPat.ucPATMode' in meta:
             patmod = meta.get('CsaSeries.MrPhoenixProtocol.sPat.ucPATMode')
             if int(patmod)>1:
                 patmod = 'PAT_'+str(patmod) + ' PE_' + str(meta.get('CsaSeries.MrPhoenixProtocol.sPat.lAccelFactPE')) +\
@@ -656,19 +656,19 @@ class Exam_info:
             dicinfo["PatMode"] = str(patmod)
             
         #slice order 1 ascending 2 descending 4 interleaved  cf CsaImage.MosaicRefAcqTimes
-        if meta.has_key('CsaSeries.MrPhoenixProtocol.sSliceArray.ucMode'):
+        if 'CsaSeries.MrPhoenixProtocol.sSliceArray.ucMode' in meta:
             dicinfo["slicemode"] = meta.get('CsaSeries.MrPhoenixProtocol.sSliceArray.ucMode')
         
         #compute for  echo spacing or dwell time
-        if meta.has_key("CsaImage.BandwidthPerPixelPhaseEncode") :
+        if "CsaImage.BandwidthPerPixelPhaseEncode" in meta:
             hz = meta.get("CsaImage.BandwidthPerPixelPhaseEncode") 
             dicinfo["PhaseBw"] = float(hz)
             #echo_spacing = 1000 ./ hz / dim(fps_dim(2)); % in ms  c'est toujours dimY ?
         
-        if meta.has_key("CsaSeries.SliceArrayConcatenations"):
+        if "CsaSeries.SliceArrayConcatenations" in meta:
             dicinfo["Concat"] = int( meta.get("CsaSeries.SliceArrayConcatenations"))
 
-        if meta.has_key("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"):
+        if "CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow" in meta :
             dicinfo["CGating"] = int( meta.get("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"))
         
         dicinfo = self.deduce_other_info(dicinfo)
