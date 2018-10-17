@@ -136,7 +136,11 @@ class Exam_info:
             if p1.StudyID is '' :
                 dicinfo["ExamNum"] = 1
             else:                       
-                dicinfo["ExamNum"] = int(p1.StudyID)
+                try:
+		    dicinfo["ExamNum"] = int(p1.StudyID)
+		except Exception as e:
+		    dicinfo["ExamNum"] = p1.StudyID
+
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
         if 'ManufacturersModelName' not in p1:
