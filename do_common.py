@@ -73,7 +73,7 @@ class doit:
 
     def add_options_parse_data(self,parser) :
         parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw',
-                                    help="full path to the root directorie dicom files (where liste of protocol are) default='/export/home/CENIR/dicom_raw'")
+                                    help="full path to the root directorie dicom files (where liste of protocol are) default=/network/lustre/iss01/cenir/raw/irm/dicom_raw'")
         parser.add_option("-p","--proto_reg", action="store", dest="proto_reg", default='.*',
                                     help="regular expression to select protocol dir default='.*' ")
         parser.add_option("-s","--suj_reg", action="store", dest="suj_reg", default='.*',
