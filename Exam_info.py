@@ -232,25 +232,25 @@ class Exam_info:
 
             dicinfo["ExamDuration"] = int(math.ceil((deltadur + dur)/60.))
         
-        if 'PatientsWeight' in p1: dicinfo["PatientsWeight"] = int(p1.PatientsWeight)        
-        dstr = p1.PatientsBirthDate
+        if 'PatientWeight' in p1: dicinfo["PatientWeight"] = int(p1.PatientWeight)        
+        dstr = p1.PatientBirthDate
         if len(p1.PatientBirthDate)>0:
             dicinfo["PatientsBirthDate"] = datetime.date(int(dstr[0:4]) , int(dstr[4:6]), int(dstr[6:8]))
         
-        if 'PatientsAge' not in p1:
+        if 'PatientAge' not in p1:
             dicinfo["PatientsAge"] = "NULL"
         else:
-            if len(p1.PatientsAge)>0:
-                dicinfo["PatientsAge"] = int(p1.PatientsAge[0:3])
+            if len(p1.PatientAge)>0:
+                dicinfo["PatientsAge"] = int(p1.PatientAge[0:3])
             
-        if "PatientsBirthDate" not in dicinfo:
+        if "PatientBirthDate" not in dicinfo:
             dicinfo["PatientsBirthDate"]="NULL"
             
-        if "PatientsSex" not in p1:
+        if "PatientSex" not in p1:
             p1.PatientsSex='Unknown'
         
-        if len(p1.PatientsSex)>0:
-            dicinfo["PatientsSex"] = p1.PatientsSex
+        if len(p1.PatientSex)>0:
+            dicinfo["PatientsSex"] = p1.PatientSex
         if "SoftwareVersions" in p1:
             dicinfo["SoftwareVersions"] = p1.SoftwareVersions
             if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
