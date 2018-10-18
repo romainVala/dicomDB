@@ -998,7 +998,7 @@ class Cenir_DB:
         
         sqlcmd = "SELECT * from %s WHERE " % (table)
 
-        for k,v in ser.iteritems() :
+        for k,v in ser.items() :
             if k not in exclude_key and k[0]!='_' : #skip hidden field
                
                 if type(v) is float:
@@ -1024,14 +1024,14 @@ class Cenir_DB:
     
         sqlcmd = "INSERT INTO %s (" %(table)
         
-        for key in E.iterkeys():
+        for key in E.keys():
             if key[0]=='_':
                 continue  #skip hidden field
             sqlcmd = "%s %s," % (sqlcmd,key)       
         
         sqlcmd = sqlcmd[:-1]+") VALUES("
     
-        for key,val in E.iteritems():
+        for key,val in E.items():
             if key[0]=='_':
                 continue  #skip hidden field
             
@@ -1062,7 +1062,7 @@ class Cenir_DB:
     
         sqlcmd = "UPDATE %s SET" %(table)
     
-        for key,val in E.iteritems():
+        for key,val in E.items():
             if key[0]=='_':
                 continue  #skip hidden field
             
