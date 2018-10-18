@@ -1560,7 +1560,7 @@ class Exam_info:
                 
 #                self.log.info('MEM3 %0.0f M ',p.get_memory_info().rss/1024/1024)
       
-                for v in pg.itervalues():
+                for v in pg.values():
                     vol = v[0]
                     (exa,suj,ser) = self.get_exam_suj_ser_from_dicom_meta(vol[1])
                     dest_dir = os.path.join(self.dicom_dir,exa,suj,ser)
