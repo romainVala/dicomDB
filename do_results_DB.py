@@ -9,8 +9,10 @@ import sys
 
 #pour le send dicom (check)
 from pynetdicom3 import AE
+import pynetdicom3.sop_class  as psc 
 #from netdicom.SOPclass import *
-from pydicom.dataset import Dataset, FileDataset
+from pydicom.dataset import Dataset, FileDataset 
+
 from pydicom.uid import ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian
 #import netdicom
 import tempfile
@@ -262,17 +264,26 @@ class Results_DB:
  
     def check_send_dicom_from_remoteAE(self,assoc):
         d = Dataset()
-        d.PatientsName = self.patient_search
+        d.PatientsName = '*';#self.patient_search
         d.QueryRetrieveLevel = "PATIENT"
         d.PatientID = "*"
-        patients = [x[1] for x in assoc.PatientRootFindSOPClass.SCU(d, 1)][:-1]
+        
+        responses = assoc.send_c_find(d, query_model='P')
+            #- ``P`` - *Patient Root Information Model - FIND*
+            #- ``S`` - *Study Root Information Model - FIND*
+            #- ``O`` - *Patient Study Only Information Model - FIND*
+            #- ``W`` - *Modality Worklist Information - FIND*
+
+        patients = [x for (st,x) in responses]
+        
+        #patients = [x[1] for x in assoc.PatientRootFindSOPClass.SCU(d, 1)][:-1]
         
         
         self.log.info("Checking %d Exams ",len(patients))
         
         # loop on patients
         for pp in patients:
-            if pp.PatientName=="Service Patient":
+            if pp.PatientID=="Service Patient":
                 print("skiping Service Patient")
                 continue
         
@@ -289,7 +300,10 @@ class Results_DB:
             d.ModalitiesInStudy = ""
             d.StudyDescription = ""
             d.NumberOfStudyRelatedInstances=""
-            studies = [x[1] for x in assoc.PatientRootFindSOPClass.SCU(d, 1)][:-1]
+            
+            responses = assoc.send_c_find(d, query_model='W')
+            studies = [x for (st,x) in responses]
+            #studies = [x[1] for x in assoc.PatientRootFindSOPClass.SCU(d, 1)][:-1]
             
             # loop on studies
             for st in studies:
@@ -353,23 +367,33 @@ class Results_DB:
             
         # create application entity with Find and Move SOP classes as SCU and
         # Storage SOP class as SCP
-        MyAE = AE("DCMTK",9999, [PatientRootFindSOPClass, PatientRootMoveSOPClass, VerificationSOPClass], [StorageSOPClass], ts)
-        MyAE.OnAssociateResponse = OnAssociateResponse
-        MyAE.OnAssociateRequest = OnAssociateRequest
-        MyAE.OnReceiveStore = OnReceiveStore
-        MyAE.start()
+        #MyAE = AE("DCMTK",9999, [PatientRootFindSOPClass, PatientRootMoveSOPClass, VerificationSOPClass], [StorageSOPClass], ts)
+        #MyAE.OnAssociateResponse = OnAssociateResponse
+        #MyAE.OnAssociateRequest = OnAssociateRequest
+        #MyAE.OnReceiveStore = OnReceiveStore
+        #MyAE.start()
         
+        MyAE = AE(ae_title='DCMTK')
+        MyAE.add_requested_context(psc.PatientRootQueryRetrieveInformationModelFind,transfer_syntax=ts)
+        MyAE.add_requested_context(psc.PatientStudyOnlyQueryRetrieveInformationModelFind,transfer_syntax=ts)
+        MyAE.add_requested_context(psc.VerificationSOPClass,transfer_syntax=ts)
+        MyAE.add_requested_context(psc.ModalityWorklistInformationFind,transfer_syntax=ts)
+
+        #from pynetdicom3 import  StoragePresentationContexts
+        #MyAE.requested_contexts = StoragePresentationContexts
         
         # remote application entity
-        PrismaAE = dict(Address="192.168.6.1", Port=104, AET="IRM1_PRIM")
+        PrismaAE = dict(addr="192.168.6.1", port=104, ae_title="IRM1_PRIM")
         
         # create association with remote AE
         self.log.info("Request association on PRISMA")
         
-        assoc = MyAE.RequestAssociation(PrismaAE)
-       
-       # perform a DICOM ECHO
-        st = assoc.VerificationSOPClass.SCU(1)
+        assoc = MyAE.associate(**PrismaAE)
+        if not assoc.is_established:
+            raise('Error no association')
+            
+        # perform a DICOM ECHO
+        st = assoc.send_c_echo()
         self.log.info('DICOM Echo done with status "%s"', st)
         
         try :
@@ -377,7 +401,7 @@ class Results_DB:
         except Exception as e:
             self.log.warning('CODE ERROR because of %s',e)
         
-        assoc.Release(0)
+        assoc.release()
 
         # AGAIN with VERIO
         VerioAE = dict(Address="192.168.6.4", Port=104, AET="IRM2_PRIM")
