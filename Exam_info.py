@@ -740,6 +740,11 @@ class Exam_info:
         dicinfo["_nb_file"] = nb_file
         
         dicinfo["nb_dic_file"] = len(alldic)
+
+        if 'spectro' in dicinfo["SeqType"] : 
+            dicinfo["_first_file"] , dicinfo["_last_file"] = alldic[0], alldic[-1]
+            return dicinfo
+        #do the dcmstack stuff
         
         pg,dicom_file_size,n_ommited  = self.get_group_stack_from_dic(alldic)
         dicinfo["fsize"] = dicom_file_size            
@@ -749,10 +754,6 @@ class Exam_info:
         if n_ommited>0:
             dicinfo["corrupt"] += str(n_ommited) + "Bad DICOM"
 
-        if 'spectro' in dicinfo["SeqType"] : 
-            return dicinfo
-
-        #do the dcmstack stuff
 
         if len(pg)>1 : 
             dicinfo["dim4"] = len(pg)
