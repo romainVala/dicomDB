@@ -143,11 +143,11 @@ class Exam_info:
 
         dicinfo["EUID"] = "%s" % (p1.StudyInstanceUID)  #hmm but make the job
         
-        if 'ManufacturersModelName' not in p1:
+        if 'ManufacturerModelName' not in p1:
             if 'Manufacturer' in p1:
-                p1.ManufacturersModelName = p1.Manufacturer
+                p1.ManufacturerModelName = p1.Manufacturer
 	  
-        dicinfo["MachineName"] = p1.ManufacturersModelName
+        dicinfo["MachineName"] = p1.ManufacturerModelName
 	#pour les wip GE changement du machinename !                
         if "Ox Offline Recon" in dicinfo["MachineName"]:
             dicinfo["MachineName"]="SIGNA PET/MR"
@@ -232,15 +232,15 @@ class Exam_info:
 
             dicinfo["ExamDuration"] = int(math.ceil((deltadur + dur)/60.))
         
-        if 'PatientWeight' in p1: dicinfo["PatientWeight"] = int(p1.PatientWeight)        
+        if 'PatientWeight' in p1: dicinfo["PatientsWeight"] = int(p1.PatientWeight)        
         
         if 'PatientAge' not in p1:
             dicinfo["PatientsAge"] = "NULL"
         else:
             if len(p1.PatientAge)>0:
                 dicinfo["PatientsAge"] = int(p1.PatientAge[0:3])
-            
-        if "PatientBirthDate" not in dicinfo:
+
+        if "PatientBirthDate" not in p1:
             dicinfo["PatientsBirthDate"]="NULL"
         else:
             dstr = p1.PatientBirthDate
@@ -262,13 +262,13 @@ class Exam_info:
         dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
         dicinfo["LastSerieDuration"] = dur
         
-        if p1.ManufacturersModelName.startswith("Verio"):
+        if p1.ManufacturerModelName.startswith("Verio"):
             dicinfo["rid"] = 19        
     
-        elif p1.ManufacturersModelName.startswith("TrioTim"):
+        elif p1.ManufacturerModelName.startswith("TrioTim"):
             dicinfo["rid"] = 1
     
-        elif p1.ManufacturersModelName.startswith("Prisma_fit"):
+        elif p1.ManufacturerModelName.startswith("Prisma_fit"):
             dicinfo["rid"] = 1   
             
         elif "MachineName" in dicinfo and dicinfo["MachineName"].startswith("SIGNA"):
