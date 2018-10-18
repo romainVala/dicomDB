@@ -317,12 +317,12 @@ def get_subdir_regex(dirs,regex,verbose=False):
   Items are sorted in each file by alphabetical order
   """
   # check inputs
-  if isinstance(dirs,basestring):
+  if isinstance(dirs,str):
     dirs=[dirs]
   elif len(dirs)==0:
     print(" ** NO directories found!!")
     return []
-  if isinstance(regex,basestring):
+  if isinstance(regex,str):
     regex=[regex]
       
   # search subdir levels

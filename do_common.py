@@ -151,8 +151,8 @@ class doit:
     
         conffile = options.conf_file
         if os.path.isfile(conffile) & (options.conf_section is not None): 
-            import ConfigParser
-            config = ConfigParser.RawConfigParser()
+            import configparser
+            config = configparser.RawConfigParser()
             config.read(conffile)
             if config.has_section(options.conf_section) :
                 self.log.info('Reading default from %s sections in $HOME/do_dicom_seriesDB.conf',options.conf_section)
@@ -198,7 +198,7 @@ class doit:
 
 
 def convert_str_to_boolean(dd):
-    for k,v in dd.iteritems():
+    for k,v in dd.items():
         if v == 'False':
             dd[k] = False
         elif v == 'True':
@@ -230,7 +230,7 @@ def write_configfile(options_dict,conffile,confsection):
         config.add_section(confsection)
     #    config = ConfigParser.RawConfigParser()
 
-    for k,v in options_dict.iteritems():
+    for k,v in options_dict.items():
         config.set(confsection,k,str(v))
     with open(conffile, 'wb') as cf:
         config.write(cf)
