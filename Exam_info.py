@@ -167,7 +167,7 @@ class Exam_info:
                 dicinfo["ExamName"] = alpha_num_str(p1.StudyDescription) 
                 dicinfo["StudyDescription"]=alpha_num_str(p1.StudyDescription)
         
-        dicinfo["PatientsName"] = alpha_num_str(p1.PatientName.original_string)
+        dicinfo["PatientsName"] = alpha_num_str(str(p1.PatientName.original_string))
         
         #appen date to SacisitionTime and format time
         if 'AcquisitionDate' in p1:
@@ -434,7 +434,7 @@ class Exam_info:
                     
         if 'FA' in p1.ImageType or 'DERIVED' in p1.ImageType or  \
             'ADC' in p1.ImageType or 'TENSOR' in p1.ImageType or 'TRACEW' in p1.ImageType \
-            or 'FSM' in p1.ImageType  or 'Service Patient' in p1.PatientName.original_string \
+            or 'FSM' in p1.ImageType  or 'Service Patient' in str(p1.PatientName.original_string) \
             or 'MOCO' in p1.ImageType or 'DUMMY IMAGE' in p1.ImageType or 'TTEST' in p1.ImageType :
                 dicinfo["SeqName"] = "DERIVED"
                 makeitshort=True
@@ -1028,12 +1028,6 @@ class Exam_info:
             del nw1
             
         if convert_nii:
-            try:
-                nii.to_filename(out_path)
-                self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
-
-            except:
-                self.log.error('convert_niiii is %s stack is %d',convert_nii,stack_num)
 
             nii_wrp = NiftiWrapper(nii)
             path_tokens = out_path.split('.')
@@ -1048,6 +1042,16 @@ class Exam_info:
             out_file = open(meta_path, 'w')
             out_file.write(nii_wrp.meta_ext.to_json())
             out_file.close()
+            
+            nii_wrp.remove_extension()
+
+            try:
+                nii.to_filename(out_path)
+                self.log.info("Writing stack %s (in %f s)",out_path,time.time()-t1)
+
+            except:
+                self.log.error('convert_niiii is %s stack is %d',convert_nii,stack_num)
+
             del nii_wrp
         
         return dest_dir,out_fn
@@ -1390,7 +1394,7 @@ class Exam_info:
             if "ImageType" in ps:
                 if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
-                or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientName.original_string \
+                or 'FSM' in ps.ImageType  or 'Service Patient' in str(ps.PatientName.original_string) \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
                 #self.log.info('Skiping %s because imageType is %s', ser,ps.ImageType)
                     if self.skip_derived_series:
