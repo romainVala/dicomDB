@@ -58,7 +58,7 @@ if __name__ == '__main__':
         
         E = Exam_info.Exam_info(log=log,nifti_dir=options.nifti_dir,dicom_ext = options.dicom_ext,dicom_dir=options.rootdir,
                       send_mail = options.send_mail,send_mail_file = options.send_mail_file , smtp_pwd = options.smtp_pwd,
-                      skip_derived_series = options.skip_derived)
+                      skip_derived_series = options.skip_derived,proto_dir = options.proto_dir)
                       
         CDB = Cenir_DB.Cenir_DB(log=log,opt=options)
     

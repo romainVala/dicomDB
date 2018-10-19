@@ -108,6 +108,8 @@ class doit:
                                   help="Dicom file extention default is *.dic")
         parser.add_option("--nifti_dir", action ="store",dest="nifti_dir",default='/network/lustre/iss01/cenir/raw/irm/nifti_raw',
                                   help="Root output directorie for nifti files")
+        parser.add_option("--proto_dir", action="store", dest="proto_dir",default=None,
+                                    help="create in the given path the same subdir Proto/exam/series to put protocol stimulation files")
         parser.add_option("--input_dir", action ="store",dest="input_dir",default='',
                                   help="if specify this will get (recursivly) all dicom file from this directory")
         parser.add_option("--tri_dicom", action ="store_true",dest="tri_dicom",default=False,

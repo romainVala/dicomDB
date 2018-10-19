@@ -17,7 +17,8 @@ class Exam_info:
                  nifti_dir='/network/lustre/iss01/cenir/raw/irm/nifti_raw/',
                  dicom_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw',
                  dicom_ext = '*.dic', send_mail = False,send_mail_file= '',
-                 smtp_pwd= '',skip_derived_series=True):
+                 smtp_pwd= '',skip_derived_series=True,
+                 proto_dir=None):
                   
         self.verbose = verbose
         self.nifti_dir = nifti_dir
@@ -35,7 +36,7 @@ class Exam_info:
         self.dicom_doublon = os.path.join(dicom_dir,'doublon')
         
         self.log = log
- 
+        self.proto_dir = proto_dir
         #self.log.info('UUUUUUU %s  %s', self.dicom_doublon,self.dicom_dir)
 
 
@@ -1000,6 +1001,10 @@ class Exam_info:
         nii.set_sform(nii.get_sform(),code=1)
         t1 = time.time()
         
+        if self.proto_dir is not None:
+            protocol_dir = os.path.join(self.proto_dir,exa,suj,ser)
+            if not os.path.isdir(protocol_dir): os.makedirs(protocol_dir)  
+
         convert_nii = True
         if os.path.isfile(out_path):
             convert_nii = False
