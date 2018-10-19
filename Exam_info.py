@@ -1005,8 +1005,8 @@ class Exam_info:
             protocol_dir = os.path.join(self.proto_dir,exa,suj,ser)
             if not os.path.isdir(protocol_dir): 
                 os.makedirs(protocol_dir)  
-                os.chmod(os.path.join(self.proto_dir,exa,suj),775)
-                os.chmod(os.path.join(self.proto_dir,exa,suj,ser),775)
+                os.chmod(os.path.join(self.proto_dir,exa,suj),0o775)
+                os.chmod(os.path.join(self.proto_dir,exa,suj,ser),0o775)
 
         convert_nii = True
         if os.path.isfile(out_path):
