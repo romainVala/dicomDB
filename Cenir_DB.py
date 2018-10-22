@@ -80,41 +80,11 @@ class Cenir_DB:
                 self.log.warning(" SKIPING import of %s \n because contained doublon",dicdir)
                 continue
 
-            print('dicdir is %s'%(dicdir))
             exist_line = self.get_sql_exam_line(E,cur)
             if len(exist_line)>0 : 
                 self.log.info("Skiping (because exist) Exam insert of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['ExamName'],E['AcquisitionTime'])
                 examID = exist_line['Eid']
-                
-                insert_serie=0
-                if test is False :
-                    for dicser in E["serie_info"] :
-                        dicser["ExamRef"] = int(examID)
-                        exist_UID_serie = self.get_sql_select_line('ExamSeries','SUID',dicser['SUID'],'EUID',E['EUID'],cur)
-                       
-                        if len(exist_UID_serie)==0:
-                            self.log.info("SQL INSERT serie %s num %d", dicser['SName'] , dicser['SNumber'])
-                            #print self.get_sql_serie_insert_cmd(dicser)
-                            cur2.execute(self.get_sql_serie_insert_cmd(dicser))    
-                            con.commit()
-                            insert_serie+=1
-                        else :
-                            exist_serie = self.get_sql_select_serie_line(dicser,cur,exclude_key=['Affine','AcqTime','nifti_dir','SliceTime','SeqName','TE'])
-                            if len(exist_serie)==0:
-                                self.log.info("SQL UPDATE serie %s num %d", dicser['SName'] , dicser['SNumber'])
-                                cur2.execute(self.get_sql_serie_update_cmd(dicser,exist_UID_serie['Sid']))    
-                                con.commit()
-                                insert_serie+=1
-
-                            else:                                    
-                                self.log.info("Skiping because exist Ser %s S %d dic:%s",dicser['SName'] , dicser['SNumber'],dicser['dicom_sdir'])
-                                
-                if insert_serie>0:
-                    self.log.info("Updating Exam time and duration from series info")
-                    self.update_Exam_duration_from_sql(examID,con,cur)
-
-            else : 
-                
+            else:
                 self.log.info("SQL INSERT of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['ExamName'],E['AcquisitionTime'])
     
 #                #check if there is the same subject the same day WHERE `AcquisitionTime` LIKE '2013-08-06%'
@@ -130,13 +100,35 @@ class Cenir_DB:
                     cur2.execute(self.get_sql_insert_cmd(E))
                     con.commit()
                     examID =  cur2.lastrowid
-                    
-                    for dicser in E["serie_info"] :
-                        dicser["ExamRef"] = int(examID)
-                        #print get_sql_serie_insert_cmd(dicser)
-                        cur2.execute(self.get_sql_serie_insert_cmd(dicser))
-                    con.commit()
-                        
+                
+                
+            insert_serie=0
+            if test is False :
+                for dicser in E["serie_info"] :
+                    dicser["ExamRef"] = int(examID)
+                    exist_UID_serie = self.get_sql_select_line('ExamSeries','SUID',dicser['SUID'],'EUID',E['EUID'],cur)
+                   
+                    if len(exist_UID_serie)==0:
+                        self.log.info("SQL INSERT serie %s num %d", dicser['SName'] , dicser['SNumber'])
+                        #print self.get_sql_serie_insert_cmd(dicser)
+                        cur2.execute(self.get_sql_serie_insert_cmd(dicser))    
+                        con.commit()
+                        insert_serie+=1
+                    else :
+                        exist_serie = self.get_sql_select_serie_line(dicser,cur,exclude_key=['Affine','AcqTime','nifti_dir','SliceTime','SeqName','TE'])
+                        if len(exist_serie)==0:
+                            self.log.info("SQL UPDATE serie %s num %d", dicser['SName'] , dicser['SNumber'])
+                            cur2.execute(self.get_sql_serie_update_cmd(dicser,exist_UID_serie['Sid']))    
+                            con.commit()
+                            insert_serie+=1
+
+                        else:                                    
+                            self.log.info("Skiping because exist Ser %s S %d dic:%s",dicser['SName'] , dicser['SNumber'],dicser['dicom_sdir'])
+                            
+            if insert_serie>0:
+                self.log.info("Updating Exam time and duration from series info")
+                self.update_Exam_duration_from_sql(examID,con,cur)
+
         
         con.close()
         
