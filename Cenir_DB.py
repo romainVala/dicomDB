@@ -104,6 +104,7 @@ class Cenir_DB:
                                 self.log.info("SQL UPDATE serie %s num %d", dicser['SName'] , dicser['SNumber'])
                                 cur2.execute(self.get_sql_serie_update_cmd(dicser,exist_UID_serie['Sid']))    
                                 con.commit()
+                                insert_serie+=1
 
                             else:                                    
                                 self.log.info("Skiping because exist Ser %s S %d dic:%s",dicser['SName'] , dicser['SNumber'],dicser['dicom_sdir'])
@@ -850,7 +851,8 @@ class Cenir_DB:
         if sql_cur.rowcount>0:
             data = sql_cur.fetchone()
 
-        self.log.debug('SQL select line is %s',sqlcmd)
+        self.log.debug('SQL select Series uid line is %s',sqlcmd)
+        self.log.debug('Find %d series', sql_cur.rowcount)
 
         return data
                 
@@ -931,7 +933,8 @@ class Cenir_DB:
         
         #update exam
             sqlcmd = "UPDATE exam SET AcquisitionTime='%s', ExamDuration='%s' where Eid=%s "%(t1,edur,eid)
-            cur2.execute(sqlcmd)        
+            cur2.execute(sqlcmd)
+            self.log.debug('Updating AcquisitionTime with \n %s'%(sqlcmd))
             con.commit()
     
     def get_sql_insert_cmd(self,E):
@@ -1002,7 +1005,7 @@ class Cenir_DB:
             if k not in exclude_key and k[0]!='_' : #skip hidden field
                
                 if type(v) is float:
-                    sqlcmd = "%s round(%s*100000) = round(%s*100000) AND" %(sqlcmd,k,v)
+                    sqlcmd = "  %s abs(floor(%s*100000)-floor(%s*100000))<2 AND" %(sqlcmd,k,v)
                 elif v is "NULL":
                     sqlcmd = "%s %s is NULL AND" %(sqlcmd,k)
                 else:
@@ -1010,13 +1013,11 @@ class Cenir_DB:
                 
         sqlcmd = sqlcmd[:-3]
         self.log.debug('sql select line %s', sqlcmd)
-        
         cur.execute(sqlcmd)
+        self.log.debug('Find %d series', cur.rowcount)
         data={}
         if cur.rowcount>0:
             data = cur.fetchone()
-
-        self.log.debug('Find %d series', len(data))
 
         return data
         
