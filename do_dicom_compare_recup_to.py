@@ -14,7 +14,7 @@ import numpy as np
 import dcmstack
 
 def convert_str_to_boolean(dd):
-    for k,v in dd.iteritems():
+    for k,v in dd.items():
         if v == 'False':
             dd[k] = False
         elif v == 'True':
@@ -31,7 +31,7 @@ def get_data_from_dicom(alldic,Ei):
     all_stack=[]
     dicom_ok=True
             
-    for v in pg.itervalues():
+    for v in pg.values():
         my_stack = dcmstack.DicomStack(meta_filter=mf,time_order='InstanceNumber')
         n_ommited=0
         n_repeat=0
@@ -47,7 +47,7 @@ def get_data_from_dicom(alldic,Ei):
                 dicom_ok=False
             except Exception as e: 
                 log.info("oups dic %s because expection"%(vol[2]))
-                print e
+                print( e )
                 n_ommited +=1
                 dicom_ok=False
             
@@ -87,7 +87,7 @@ def configfile(options_dict,conffile,confsection):
         config.add_section(confsection)
     #    config = ConfigParser.RawConfigParser()
 
-    for k,v in options_dict.iteritems():
+    for k,v in options_dict.items():
         config.set(confsection,k,str(v))
     with open(conffile, 'wb') as cf:
         config.write(cf)
@@ -139,10 +139,11 @@ if __name__ == '__main__':
             
 
     ###
-    fmove = open(os.path.join(recup_dir,'move_missing.sh'),'w+')
-    fmovesql = open(os.path.join(recup_dir,'sql_missing.sh'),'w+')
-    fmovecorupt   = open(os.path.join(recup_dir,'delete_corrupt.sh'),'w+')
-    fmoverecup    = open(os.path.join(recup_dir,'delete_recup.sh'),'w+')
+    workdir = os.getcwd()
+    fmove = open(os.path.join(workdir,'move_missing.sh'),'w+')
+    fmovesql = open(os.path.join(workdir,'sql_missing.sh'),'w+')
+    fmovecorupt   = open(os.path.join(workdir,'delete_corrupt.sh'),'w+')
+    fmoverecup    = open(os.path.join(workdir,'delete_recup.sh'),'w+')
     
     in_dir= c.get_subdir_regex(recup_dir,['.*','.*'])
     
