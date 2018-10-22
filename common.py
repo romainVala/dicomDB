@@ -94,7 +94,7 @@ def checkImage(filename,compfile=None):
     ftime=os.path.getmtime(filename)
     
     compfiles=[]
-    if isinstance(compfile,basestring):
+    if isinstance(compfile,str):
       compfiles=[compfile]
     
     isnewer=False
@@ -136,7 +136,7 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
   itime=-1 # numer of seconds since epoch
   inputs_exist=True
   if inputs is not None:
-    if isinstance(inputs, basestring): # check if input is only string and not list
+    if isinstance(inputs, str): # check if input is only string and not list
       if not os.path.exists(inputs):
         inputs_exist=False
         print(" ** Error: Input does not exist! :: "+str(inputs))
@@ -156,7 +156,7 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
   outExists=False
   otime=-1
   if outputs is not None:
-    if isinstance(outputs,basestring):
+    if isinstance(outputs,str):
       outExists=os.path.exists(outputs)
       if outExists:
         otime=os.path.getmtime(outputs)
@@ -209,7 +209,7 @@ def command(commandline,inputs=None,outputs=None,clfile=None,logfile=None,verbos
   outExists=False
   if outputs is None:
     outExists=True
-  elif isinstance(outputs,basestring):
+  elif isinstance(outputs,str):
     outExists=os.path.exists(outputs)
   else:
     for o in outputs:
@@ -375,13 +375,13 @@ def get_subdir_regex_files(dirs,regex,opts={"items":-1}):
   """
 
   # check inputs
-  if isinstance(dirs,basestring):
+  if isinstance(dirs,str):
     dirs=[dirs]
   elif len(dirs)==0:
     print(" ** Error: No dirs found!!")
     return []
     
-  if isinstance(regex,basestring):
+  if isinstance(regex,str):
     regex=[regex]
   
   # extracting options
