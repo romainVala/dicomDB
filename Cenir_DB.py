@@ -520,8 +520,6 @@ class Cenir_DB:
         else:
             f1=open('./remove_exam_doublon_cluser_nifti.sh', 'w+')
             f11=open('./remove_exam_doublon_cluser_dicom.sh', 'w+')
-            f2=open('./remove_exam_doublon_dicom_raw.sh', 'w+')
-            f3=open('./remove_exam_doublon_AC.sh', 'w+')
             f4 = open('./remove_exam_sql','w+')
             f44 = open('./remove_exam_sql_doublon_before_reimport','w+')            
             f5 = open('./reimport_exam','w+')
@@ -602,8 +600,6 @@ class Cenir_DB:
         
                         #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
                         f11.write(('cd /network/lustre/iss01/cenir/raw/irm/dicom_raw/;cd %s; mv %s /network/lustre/iss01/cenir/raw/irm/doublon_dicom/\n'%(prot,suj)))
-                        f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
-                        f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
                         
                         strinfo+= "\ndelete from exam where Eid='%s' " % (drows[ind]['Eid'])
         
@@ -629,7 +625,6 @@ class Cenir_DB:
                                 else :                
                                     strinfo += "\ncd %s; cd %s; rm -rf %s" % (pp,prot,suj)
                                     f1.write(('cd %s;cd %s; rm -rf %s\n'%(pp,prot,suj)))
-                                    f2.write(('cd /nasDicom/spm_raw/;cd %s; rm -rf  %s \n'%(prot,suj)))
         
                         
                         sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[ind]['Eid'])
@@ -642,8 +637,6 @@ class Cenir_DB:
                 
             f1.close()
             f11.close()
-            f2.close()
-            f3.close()
             f4.close()
             f44.close()
             f5.close()
