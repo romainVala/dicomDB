@@ -172,9 +172,13 @@ if __name__ == '__main__':
             
             for serrecup in in_recup_ser:
                 pp,ser = os.path.split(serrecup)                
+                
+                if ser.endswith('_again') :
+                    continue
+                
                 serdic = c.get_subdir_regex(sujdic[0],'^'+ ser +'$')
                 
-                if len(serdic) == 0 :
+                if len(serdic) == 0 :                    
                     log.info('Missing Serie %s/%s',sujdic[0],ser)
                     #fmove.write('cp -r %s %s/;\n'%(serrecup,os.path.join(dicom_dir0,proto,suj)))
                     #fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir0,proto,suj)))
