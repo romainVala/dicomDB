@@ -219,16 +219,18 @@ class Cenir_DB:
         con.close()
                         
     def find_sql_doublon(self):
-        self.remove_duplicate_exam()
+        #self.remove_duplicate_exam()
         #self.remove_duplicate_serie()  
         #self.check_dicom_remove()       #quite long so not always 
-
+        #self.check_dicom_remove(replace_root_dir='/network/lustre/iss01/cenir/raw/irm/dicom_raw',replace_old_root_dir='/export/dataCENIR/dicom/dicom_raw')
+        self.check_dicom_serie_remove()
+        #self.check_dicom_serie_remove(replace_root_dir='/network/lustre/iss01/cenir/raw/irm/',replace_old_root_dir='/export/dataCENIR/dicom/')
+        
         #self.remove_lixium_duplicate_exam()
-        #self.remove_duplicate_exam_correct()
         #self.check_dicom_serie_remove()
         #self.remove_duplicate_serieUID()
         
-    def check_dicom_remove(self):
+    def check_dicom_remove(self,replace_root_dir=None,replace_old_root_dir=None):
         con,cur = self.open_sql_connection()
         sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_dir from exam where 1;";
         ff = open('./remove_missing_dicom_dir.sh','w+')
@@ -237,33 +239,76 @@ class Cenir_DB:
         rows = cur.fetchall()
         self.log.info('checking %d rows',len(rows))
 
-        for row in rows:
-            if os.path.isdir(row['dicom_dir']) is False:
-                strinfo = '\nFind missing dicom E:%s  %s %s %s'%(row['Eid'],row['ExamName'],row['PatientsName'],row['dicom_dir'])
-                self.log.info(strinfo)
-                ff.write("delete from exam where Eid=%d;\n"%(row['Eid']))
+        if replace_root_dir is not None:
+            for row in rows:
+                dicdir = row['dicom_dir']
+                if dicdir.startswith(replace_old_root_dir):
+                    snew=dicdir.replace(replace_old_root_dir,replace_root_dir)
+                    
+                    if os.path.isdir(snew) :
+                        sqlcmd = "UPDATE exam SET dicom_dir='%s' where Eid=%s "%(snew,row['Eid'])
+                        cur.execute(sqlcmd)
+                        con.commit()
+                    else:
+                        self.log.warning("Exam sql %s but not in %s",dicdir, snew)
+                else:
+                    if os.path.isdir(dicdir) is False:
+                        strinfo = '\nFind missing dicom E:%s  %s %s %s'%(row['Eid'],row['ExamName'],row['PatientsName'],row['dicom_dir'])
+                        self.log.info(strinfo)
+            
+        else:
+            for row in rows:                
+                if os.path.isdir(row['dicom_dir']) is False:
+                    strinfo = '\nFind missing dicom E:%s  %s %s %s'%(row['Eid'],row['ExamName'],row['PatientsName'],row['dicom_dir'])
+                    self.log.info(strinfo)
+                    ff.write("delete from exam where Eid=%d;\n"%(row['Eid']))
 
         con.close()
         ff.close()
       
-    def check_dicom_serie_remove(self):
+    def check_dicom_serie_remove(self,replace_root_dir=None,replace_old_root_dir=None):
         con,cur = self.open_sql_connection()
-        sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_sdir, dicom_dir, Sid from ExamSeries where 1;";
+        sqlcmd="select Eid,  ExamName, PatientsName, ExamName, dicom_sdir, dicom_dir, nifti_dir, nifti_volumes, Sid from ExamSeries where 1;";
         ff = open('./remove_missing_dicom_dir.sh','w+')
+        ff2 = open('./reimport.sh','w+')
         print(sqlcmd)
         cur.execute(sqlcmd)
         rows = cur.fetchall()
         self.log.info('checking %d rows',len(rows))
 
-        for row in rows:
-            serdir_path = os.path.join(row['dicom_dir'],row['dicom_sdir'])
-            if os.path.isdir(serdir_path) is False:
-                strinfo = '\nFind missing dicom E:%s S:%s %s %s %s'%(row['Eid'],row['Sid'],row['ExamName'],row['PatientsName'],serdir_path)
-                self.log.info(strinfo)
-                ff.write("delete from serie where Sid=%d;\n"%(row['Sid']))
+        if replace_root_dir is not None:
+            self.log.info('Changing path %s to %s ',replace_old_root_dir,replace_root_dir)
+            for row in rows:
+                serdir_nii = row['nifti_dir']
+                if serdir_nii is None: continue
+            
+                if serdir_nii.startswith(replace_old_root_dir):
+                    snew = serdir_nii.replace(replace_old_root_dir,replace_root_dir)
+                    if os.path.isdir(snew) :
+                        sqlcmd = "UPDATE serie SET nifti_dir='%s' where Sid=%s "%(snew,row['Sid'])
+                        cur.execute(sqlcmd)
+                        con.commit()
+                    else:
+                        ff.write("delete from serie where Sid=%d;\n"%(row['Sid']))
+                        ff2.write('do_dicom_series_DB.py -c import_db --input_dir=%s/%s \n'%(row['dicom_dir'],row['dicom_sdir']))
+                        self.log.warning("Nifti ser sql %s but not in %s",serdir_nii, snew)
+                else:
+                    if os.path.isdir(serdir_nii) is False:
+                        ff.write("delete from serie where Sid=%d;\n"%(row['Sid']))
+                        ff2.write('do_dicom_series_DB.py -c import_db --input_dir=%s/%s \n'%(row['dicom_dir'],row['dicom_sdir']))
+                        self.log.warning("BAD nifti dir %s",serdir_nii)
+
+                
+        else:
+            for row in rows:
+                serdir_path = os.path.join(row['dicom_dir'],row['dicom_sdir'])
+                if os.path.isdir(serdir_path) is False:
+                    strinfo = '\nFind missing dicom E:%s S:%s %s %s %s'%(row['Eid'],row['Sid'],row['ExamName'],row['PatientsName'],serdir_path)
+                    self.log.info(strinfo)
+                    ff.write("delete from serie where Sid=%d;\n"%(row['Sid']))
 
         con.close()
-        ff.close()
+        ff.close();ff2.close();
       
 
     def remove_duplicate_serieUID(self):
@@ -503,7 +548,17 @@ class Cenir_DB:
         con,cur = self.open_sql_connection()
         import common as c 
          
+        #remove empty exam line
+        self.log.info("loking at empty exam ")
+        f5 = open('./remove_empty_exam_sql','w+')
         
+        sqlcmd = "select exam.Eid from exam left outer join serie on (exam.Eid = serie.ExamRef ) where serie.ExamRef is null;"
+        cur.execute(sqlcmd)
+        rows = cur.fetchall()
+        for row in rows:
+            f5.write("delete from exam where Eid='%s' ;\n"%(row['Eid']))
+        f5.close()
+                        
         #pour voir les exam partiellement duplique (quelque series)
              # select count(*), Eid, dicom_dir,dicom_sdir , SName from ExamSerie group by SNumber, AcqTime, MachineName having count(*)>1;
 
@@ -642,154 +697,7 @@ class Cenir_DB:
             f5.close()
             f6.close()
             
-        #remove empty exam line
-        self.log.info("loking at empty exam ")
-        f5 = open('./remove_empty_exam_sql','w+')
-        
-        sqlcmd = "select exam.Eid from exam left outer join serie on (exam.Eid = serie.ExamRef ) where serie.ExamRef is null;"
-        cur.execute(sqlcmd)
-        rows = cur.fetchall()
-        for row in rows:
-            f5.write("delete from exam where Eid='%s' ;\n"%(row['Eid']))
-        f5.close()
-                
 
-        con.close()
-
-    def remove_duplicate_exam_correct(self):
-        con,cur = self.open_sql_connection()
-        import common as c 
-        #pour voir les exam partiellement duplique (quelque series)
-             # select count(*), Eid, dicom_dir,dicom_sdir , SName from ExamSerie group by SNumber, AcqTime, MachineName having count(*)>1;
-
-        #find double exams
-        #sqlcmd="select count(*) as doublon, e.* from exam e group by  AcquisitionTime ,MachineName having count(*)>1"
-        #sqlcmd="select count(*) as doublon, e.* , substr(AcquisitionTime,1,17) as ttime from exam e group by  ttime ,MachineName having count(*)>1"
-        sqlcmd="select count(*) as doublon, e.* , substr(AcquisitionTime,1,19) as ttime from exam e group by  ttime ,MachineName having count(*)>1"
-        cur.execute(sqlcmd)
-        rows = cur.fetchall()
-        self.log.info('Looking for sql Exam duplicate')
-        
-        if len(rows)==0:
-            self.log.info('Did not find Any exam double')
-        else:
-            f1=open('./remove_exam_doublon_cluser_nifti.sh', 'w+')
-            f11=open('./remove_exam_doublon_cluser_dicom.sh', 'w+')
-            f2=open('./remove_exam_doublon_dicom_raw.sh', 'w+')
-            f3=open('./remove_exam_doublon_AC.sh', 'w+')
-            f4 = open('./remove_exam_sql','w+')
-            f5 = open('./remove_reimport.sh','w+')
-            
-            self.log.info('%d exam doublons',len(rows))
-            for row in rows:
-                #sqlcmd = "select  * from exam where AcquisitionTime='%s' and MachineName='%s'"%(row['AcquisitionTime'],row['MachineName'])
-                sqlcmd = "select  * from exam where AcquisitionTime = '%s' and MachineName='%s'"%(row['ttime'],row['MachineName'])
-                cur.execute(sqlcmd)
-                drows = cur.fetchall()
-                timedir = []
-                strinfo = '\nFind %d doublon '%(row['doublon'])
-                #correction 01 2016 getmtime -> getctime
-                for drow in drows:
-                    # if modification time from directories it may not work ... 
-                    #serdir = c.get_subdir_regex(drow['dicom_dir'],'^S01');
-                    #timedir.append(os.path.getmtime(drow['dicom_dir']))
-                    #timedir.append(os.path.getmtime(serdir[0]))
-
-                    #timedir.append(drow['EUID']) do not work
-                    serdir = c.get_subdir_regex(drow['dicom_dir'],'^S01');
-                    files = c.get_subdir_regex_files(serdir[0],'.*dic')                    
-                    timedir.append(os.path.getmtime(files[0]))
-                    
-                    
-                    strinfo+='\n  suj (%s) : %s dicom_dir : %s'%(drow['Eid'],drow['PatientsName'],drow['dicom_dir'])
-                
-                if drows[0]['dicom_dir'] == drows[1]['dicom_dir']:
-                    strinfo += '\nWARNING SAME DICOM DIR Please reimport'
-                    self.log.info(strinfo)
-                    continue
-    
-                sind = sorted(range(len(timedir)), key=timedir.__getitem__)
-                strinfo += '\n the last created is line %d'%(sind[-1]+1)
-    
-                #find series of the first
-                sqlcmd = "select count(*) as nbs ,sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[0]]['Eid'])
-                cur.execute(sqlcmd)
-                serbad = cur.fetchone()
-                sqlcmd = "select count(*) as nbs , sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
-                cur.execute(sqlcmd)
-                serok = cur.fetchone()
-    
-                if serok['nbd'] == serbad['nbd']:
-                    strinfo+='\nsame number of dicom files'
-                else :
-                    strinfo+='\nWARNING different number of dicom files'
-                    strinfo+='\n  the bad has %d files'%(serbad['nbd'])
-                    strinfo+='\n  the ok  has %d files'%(serok['nbd'])
-                
-                for ind in sind[:-1]:
-                    dicdir = drows[ind]['dicom_dir']
-                    pp,suj = os.path.split(dicdir)
-                    pp,prot = os.path.split(pp)
-
-                    if prot=='doublon_dicom':
-                        strinfo+='\n this was a real doublon so delete sql %s'%(drows[ind]['Eid'])
-                        sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[ind]['Eid'])
-                        f4.write(sqlcmd)
-
-                    else :                            
-                        strinfo+="\nMoving cd %s ;cd %s; mv %s"%(pp,prot,suj)
-
-                        dicdirok = drows[sind[-1]]['dicom_dir']
-                        pp,sujok = os.path.split(dicdirok)                 
-                        protok = drows[sind[-1]]['ExamName']                 
-                        
-                        #f1.write(('cd %s;cd %s; mv %s /export/home/romain.valabregue/img/doublon_dicom/\n'%(pp,prot,suj)))
-                        f11.write('cd /network/lustre/iss01/cenir/raw/irm/doublon_dicom/; mv %s /network/lustre/iss01/cenir/raw/irm/dicom_raw/%s/\n'%(sujok,protok))
-                        f11.write(('cd /network/lustre/iss01/cenir/raw/irm/dicom_raw/;cd %s; mv %s /network/lustre/iss01/cenir/raw/irm/doublon_dicom/\n\n'%(prot,suj)))
-                        f5.write('do_dicom_series_DB.py -c import_db --input_dir=/network/lustre/iss01/cenir/raw/irm/dicom_raw/%s/%s\n'%(protok,sujok))
-                        f2.write(('cd /nasDicom/doublon_dicom/; mv %s /nasDicom/dicom_raw/%s/\n'%(sujok,protok)))
-                        f2.write(('cd /nasDicom/dicom_raw/;cd %s; mv %s /nasDicom/doublon_dicom/\n'%(prot,suj)))
-                        f3.write(('cd  /C2_donnees_irm/PROTO_FINI/dicom_raw;cd %s; rm -rf %s \n'%(prot,suj)))
-                        
-                        strinfo+= "\ndelete from exam where Eid='%s' " % (drows[ind]['Eid'])
-        
-                        sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[ind]['Eid'])
-                        cur.execute(sqlcmd)
-                        serbad = cur.fetchone()
-                        if serbad['nifti_dir'] is None:
-                            niftidir = None
-                        else:
-                            niftidir = os.path.dirname(serbad['nifti_dir'] )
-                            
-                            sqlcmd = "select distinct nifti_dir  from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
-                            cur.execute(sqlcmd)
-                            serok = cur.fetchone()
-                            if serok['nifti_dir'] != None:
-                                niftidir_ok = os.path.dirname(serok['nifti_dir'] )                                               
-                                
-                                pp,suj = os.path.split(niftidir)
-                                pp,prot = os.path.split(pp)
-                                pp='/network/lustre/iss01/cenir/raw/irm/nifti_raw'
-                                if niftidir_ok == niftidir:
-                                    strinfo += "\nSTRANGE different dicom dir lead to the same nifti dir %s : do not delete"%(niftidir)
-                                else :                
-                                    strinfo += "\ncd %s; cd %s; rm -rf %s" % (pp,prot,suj)
-                                    f1.write(('cd %s;cd %s; rm -rf %s\n'%(pp,prot,suj)))
-                                    f2.write(('cd /nasDicom/spm_raw/;cd %s; rm -rf  %s \n\n'%(prot,suj)))
-        
-                        
-                        sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[ind]['Eid'])
-                        f4.write(sqlcmd)
-                             
-                strinfo += "\n\n"
-                self.log.info(strinfo)
-                
-            f1.close()
-            f11.close()
-            f2.close()
-            f3.close()
-            f4.close()
-            
         con.close()
 
     def get_sql_exam_line(self,E,cur):
