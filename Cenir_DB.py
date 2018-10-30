@@ -115,7 +115,7 @@ class Cenir_DB:
                         con.commit()
                         insert_serie+=1
                     else :
-                        exist_serie = self.get_sql_select_serie_line(dicser,cur,exclude_key=['Affine','AcqTime','nifti_dir','SliceTime','SeqName','TE'])
+                        exist_serie = self.get_sql_select_serie_line(dicser,cur,exclude_key=['Affine','AcqTime','SliceTime','SeqName','TE'])
                         if len(exist_serie)==0:
                             self.log.info("SQL UPDATE serie %s num %d", dicser['SName'] , dicser['SNumber'])
                             cur2.execute(self.get_sql_serie_update_cmd(dicser,exist_UID_serie['Sid']))    
