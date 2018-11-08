@@ -635,7 +635,7 @@ class Cenir_DB:
                         cur.execute(sqlcmd)
                         seroks = cur.fetchall()
                         for ii,ss in enumerate(serbads):
-                            if not( ss['SName'] == seroks[ii]['SName'] ) or not( ss['AcqTime'] == seroks[ii]['AcqTime'] ):
+                            if not( ss['SName'] == seroks[ii]['SName'] )  ):
                                 do_move=False; 
                                 break
                         if do_move==False :
