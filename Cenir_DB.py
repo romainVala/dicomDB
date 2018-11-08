@@ -606,10 +606,10 @@ class Cenir_DB:
                     strinfo += '\nWARNING SAME DICOM DIR Please reimport'
                     self.log.info(strinfo)
                     f5.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[0]['dicom_dir']))
-                    #sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[0]['Eid'])
-                    #f4.write(sqlcmd)         
-                    #sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[1]['Eid'])
-                    #f4.write(sqlcmd)
+                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[0]['Eid'])
+                    f4.write(sqlcmd)         
+                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[1]['Eid'])
+                    f4.write(sqlcmd)
                     continue
     
                 sind = sorted(range(len(timedir)), key=timedir.__getitem__)
@@ -650,15 +650,21 @@ class Cenir_DB:
                         do_move=False
                 else:
                     strinfo+='\nWARNING different number of SERIES '
-                    strinfo+='\n  the bad has %d series'%(serbad['nbs'])
-                    strinfo+='\n  the ok  has %d series'%(serok['nbs'])
+                    dicserbad =  c.get_subdir_regex(drows[sind[0]]['dicom_dir'],'^S')
+                    dicserok  =  c.get_subdir_regex(drows[sind[-1]]['dicom_dir'],'^S')
+
+                    strinfo+='\n  the bad has %d sql series and %d on dicom_dir '%(serbad['nbs'],len(dicserbad))
+                    strinfo+='\n  the ok  has %d sql series and %s on dicom_dir '%(serok['nbs'],len(dicserok))
+                   
                     do_move=False
-                    f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[0]['dicom_dir']))
-                    f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[1]['dicom_dir']))
-                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[0]['Eid'])
-                    f44.write(sqlcmd)         
-                    sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[1]['Eid'])
-                    f44.write(sqlcmd)
+                    if serbad['nbs'] != len(dicserbad):
+                        f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[sind[0]]['dicom_dir']))
+                        sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[sind[0]]['Eid'])
+                        f44.write(sqlcmd)         
+                    if serok['nbs'] != len(dicserok):
+                        f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[sind[-1]]['dicom_dir']))
+                        sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[sind[-1]]['Eid'])
+                        f44.write(sqlcmd)
                 
                 if do_move:
                     for ind in sind[:-1]:
