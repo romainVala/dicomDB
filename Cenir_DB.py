@@ -219,11 +219,11 @@ class Cenir_DB:
         con.close()
                         
     def find_sql_doublon(self):
-        #self.remove_duplicate_exam()
+        self.remove_duplicate_exam()
         #self.remove_duplicate_serie()  
         #self.check_dicom_remove()       #quite long so not always 
         #self.check_dicom_remove(replace_root_dir='/network/lustre/iss01/cenir/raw/irm/dicom_raw',replace_old_root_dir='/export/dataCENIR/dicom/dicom_raw')
-        self.check_dicom_serie_remove()
+        #self.check_dicom_serie_remove()
         #self.check_dicom_serie_remove(replace_root_dir='/network/lustre/iss01/cenir/raw/irm/',replace_old_root_dir='/export/dataCENIR/dicom/')
         
         #self.remove_lixium_duplicate_exam()
@@ -628,7 +628,21 @@ class Cenir_DB:
                 if serok['nbs'] == serbad['nbs']:
                     strinfo+='\same number of series'
                     if serok['nbd'] == serbad['nbd']:
-                        strinfo+='\nsame number of dicom files'
+                        sqlcmd = "select AcqTime, SName from serie s where ExamRef='%d'"%(drows[sind[0]]['Eid'])
+                        cur.execute(sqlcmd)
+                        serbads = cur.fetchall()
+                        sqlcmd = "select count(*) as nbs , sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
+                        cur.execute(sqlcmd)
+                        seroks = cur.fetchall()
+                        for ii,ss in enumerate(serbads):
+                            if not( ss['SName'] == seroks[ii]['SName'] ):
+                                do_move=False; 
+                                break
+                        if do_move==False :
+                            strinfo+='\nWARNING SAME number BUT DIFFERENT SNname'
+                        else:
+                            strinfo+='\nsame number of dicom files'
+                            
                     else :
                         strinfo+='\nWARNING different number of dicom files'
                         strinfo+='\n  the bad has %d files'%(serbad['nbd'])
