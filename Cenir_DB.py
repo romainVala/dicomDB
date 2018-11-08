@@ -628,10 +628,10 @@ class Cenir_DB:
                 if serok['nbs'] == serbad['nbs']:
                     strinfo+='\same number of series'
                     if serok['nbd'] == serbad['nbd']:
-                        sqlcmd = "select AcqTime, SName from serie s where ExamRef='%d'"%(drows[sind[0]]['Eid'])
+                        sqlcmd = "select AcqTime, SName from serie s where ExamRef='%d' order by SNumber;"%(drows[sind[0]]['Eid'])
                         cur.execute(sqlcmd)
                         serbads = cur.fetchall()
-                        sqlcmd = "select  AcqTime, SName from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
+                        sqlcmd = "select  AcqTime, SName from serie s where ExamRef='%d'order by SNumber;"%(drows[sind[-1]]['Eid'])
                         cur.execute(sqlcmd)
                         seroks = cur.fetchall()
                         for ii,ss in enumerate(serbads):
