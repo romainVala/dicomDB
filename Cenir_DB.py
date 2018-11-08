@@ -631,11 +631,11 @@ class Cenir_DB:
                         sqlcmd = "select AcqTime, SName from serie s where ExamRef='%d'"%(drows[sind[0]]['Eid'])
                         cur.execute(sqlcmd)
                         serbads = cur.fetchall()
-                        sqlcmd = "select count(*) as nbs , sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
+                        sqlcmd = "select  AcqTime, SName from serie s where ExamRef='%d'"%(drows[sind[-1]]['Eid'])
                         cur.execute(sqlcmd)
                         seroks = cur.fetchall()
                         for ii,ss in enumerate(serbads):
-                            if not( ss['SName'] == seroks[ii]['SName'] ):
+                            if not( ss['SName'] == seroks[ii]['SName'] ) or not( ss['AcqTime'] == seroks[ii]['AcqTime'] ):
                                 do_move=False; 
                                 break
                         if do_move==False :
