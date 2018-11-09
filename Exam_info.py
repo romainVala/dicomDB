@@ -1096,8 +1096,14 @@ class Exam_info:
         else:
             exa = alpha_num_str(meta["StudyDescription"]) 
         
+        # change exam field for GE data
+        if 'Manufacturer' in meta:
+            if 'GE MEDICAL SYSTEMS' in meta["Manufacturer"]:
+                if 'ProtocolName' in meta and len(meta["ProtocolName"])>0 and meta["ProtocolName"]!= ' ':
+                    exa = alpha_num_str(meta["ProtocolName"])
+
         if "StudyDate" not in meta:
-        	study_date = ''
+            study_date = ''
         else :
             study_date = str(meta["StudyDate"])
 
@@ -1105,45 +1111,38 @@ class Exam_info:
             study_date = str(meta["SeriesDate"])
 
         study_date = study_date[0:4]+'_'+study_date[4:6] + '_' + study_date[6:8]
+    
+#        if "SeriesDate" not in meta : 
+#            str_date = study_date
+#        else:
+#            str_date = str(meta["SeriesDate"])
+#            str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
+#        
+#            #dicom bug only for DTI tensor : AcquisitionDate is bad and anterior
+#            if study_date > str_date : 
+#                str_date = study_date
+        str_date = study_date
 
-        # change exam field for GE data
-        if 'Manufacturer' in meta:
-            
-            if 'GE MEDICAL SYSTEMS' in meta["Manufacturer"]:
-                if 'ProtocolName' in meta and len(meta["ProtocolName"])>0 and meta["ProtocolName"]!= ' ':
-                    exa = alpha_num_str(meta["ProtocolName"])
-    
-    
-            if "SeriesDate" not in meta : 
-                str_date = study_date
-            else:
-                str_date = str(meta["SeriesDate"])
-                str_date = str_date[0:4]+'_'+str_date[4:6] + '_' + str_date[6:8] 
-            
-                #dicom bug only for DTI tensor : AcquisitionDate is bad and anterior
-                if study_date > str_date : 
-                    str_date = study_date
-                    
-            
-            suj = str_date + '_' + alpha_num_str(meta["PatientName"])
-            try :
-                exaid = meta["StudyID"]
-            except:
-                exaid='1'
-                    
-            if len(exaid)>1 : #Service patient has strange Eid
-                suj += '_E' + exaid
-            elif int(exaid)>1:
-                suj += '_E' + exaid
+        suj = str_date + '_' + alpha_num_str(meta["PatientName"])
+        try :
+            exaid = meta["StudyID"]
+        except:
+            exaid='1'
                 
-            if 'SeriesDescription' not  in meta:
-                meta["SeriesDescription"] = 'nodescription'
-                
-            ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
-            if "ImageType" in meta and "P" in meta["ImageType"]:
-                ser = ser + '_phase'
+        if len(exaid)>1 : #Service patient has strange Eid
+            suj += '_E' + exaid
+        elif int(exaid)>1:
+            suj += '_E' + exaid
             
-            return(exa,suj,ser)
+        if 'SeriesDescription' not  in meta:
+            meta["SeriesDescription"] = 'nodescription'
+
+        ser = 'S%02d' % meta.get('SeriesNumber') + '_' + alpha_num_str(meta["SeriesDescription"])
+        if "ImageType" in meta and "P" in meta["ImageType"]:
+            ser = ser + '_phase'
+
+        return(exa,suj,ser)
+
         
     def write_diff_to_file(self,nw,dest_dir):
         
