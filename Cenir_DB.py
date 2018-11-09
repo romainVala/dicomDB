@@ -589,6 +589,7 @@ class Cenir_DB:
                 timedir = []
                 strinfo = '\nFind %d doublon '%(row['doublon'])
                 #correction 01 2016 getmtime -> getctime
+                infolist=[]
                 for drow in drows:
                     #timedir.append(os.path.getctime(drow['dicom_dir']))
                     # if modification time from directories it may not work ... 
@@ -600,7 +601,7 @@ class Cenir_DB:
                     files = c.get_subdir_regex_files(serdir[0],'.*dic')                    
                     timedir.append(os.path.getmtime(files[0]))
                     
-                    strinfo+='\n  suj (%s) : %s dicom_dir : %s'%(drow['Eid'],drow['PatientsName'],drow['dicom_dir'])
+                    infolist.append('\n  suj (%s) : %s dicom_dir : %s'%(drow['Eid'],drow['PatientsName'],drow['dicom_dir']))
                 
                 if drows[0]['dicom_dir'] == drows[1]['dicom_dir']:
                     strinfo += '\nWARNING SAME DICOM DIR Please reimport'
@@ -613,7 +614,9 @@ class Cenir_DB:
                     continue
     
                 sind = sorted(range(len(timedir)), key=timedir.__getitem__)
-                strinfo += '\n the last created is line %d'%(sind[-1]+1)
+                #strinfo += '\n the last created is line %d'%(sind[-1]+1)
+                for ii in range(len(infolist)):
+                    strinfo +=  infolist[sind[ii]]
     
                 #find series of the first
                 sqlcmd = "select count(*) as nbs ,sum(nb_dic_file) as nbd from serie s where ExamRef='%d'"%(drows[sind[0]]['Eid'])
@@ -626,14 +629,15 @@ class Cenir_DB:
                 do_move=True
                 
                 if serok['nbs'] == serbad['nbs']:
-                    strinfo+='\same number of series'
+                    strinfo+='\nsame number of series'
+                    sqlcmd = "select AcqTime, SName, nb_dic_file as nbf, SNumber from serie s where ExamRef='%d' order by SNumber;"%(drows[sind[0]]['Eid'])
+                    cur.execute(sqlcmd)
+                    serbads = cur.fetchall()
+                    sqlcmd = "select  AcqTime, SName, nb_dic_file as nbf, SNumber from serie s where ExamRef='%d'order by SNumber;"%(drows[sind[-1]]['Eid'])
+                    cur.execute(sqlcmd)
+                    seroks = cur.fetchall()
+
                     if serok['nbd'] == serbad['nbd']:
-                        sqlcmd = "select AcqTime, SName from serie s where ExamRef='%d' order by SNumber;"%(drows[sind[0]]['Eid'])
-                        cur.execute(sqlcmd)
-                        serbads = cur.fetchall()
-                        sqlcmd = "select  AcqTime, SName from serie s where ExamRef='%d'order by SNumber;"%(drows[sind[-1]]['Eid'])
-                        cur.execute(sqlcmd)
-                        seroks = cur.fetchall()
                         for ii,ss in enumerate(serbads):
                             if not( ss['SName'] == seroks[ii]['SName'] ):
                                 do_move=False; 
@@ -645,9 +649,18 @@ class Cenir_DB:
                             
                     else :
                         strinfo+='\nWARNING different number of dicom files'
-                        strinfo+='\n  the bad has %d files'%(serbad['nbd'])
                         strinfo+='\n  the ok  has %d files'%(serok['nbd'])
-                        do_move=False
+                        strinfo+='\n  the bad has %d files'%(serbad['nbd'])
+
+                        for ii,ss in enumerate(serbads):
+                            if not( ss['nbf'] == seroks[ii]['nbf'] ):
+                                strinfo+='\n ser_ok  S%d_%s has %d files ser_bad S%d_%s has %d files'%(
+                                        seroks[ii]['SNumber'],seroks[ii]['SName'],seroks[ii]['nbf'],ss['SNumber'],ss['SName'],ss['nbf'])
+
+                        if serok['nbd']>serbad['nbd']:
+                            strinfo+='\nPLEASE CHECK FORCING MOVE'
+                        else:
+                            do_move=False
                 else:
                     strinfo+='\nWARNING different number of SERIES '
                     dicserbad =  c.get_subdir_regex(drows[sind[0]]['dicom_dir'],'^S')
@@ -655,8 +668,12 @@ class Cenir_DB:
 
                     strinfo+='\n  the bad has %d sql series and %d on dicom_dir '%(serbad['nbs'],len(dicserbad))
                     strinfo+='\n  the ok  has %d sql series and %s on dicom_dir '%(serok['nbs'],len(dicserok))
-                   
-                    do_move=False
+                    
+                    if  serok['nbs'] > serbad['nbs']:
+                        strinfo+='\nPLEASE CHECK FORCING MOVE'
+                    else:
+                        do_move=False
+                        
                     if serbad['nbs'] != len(dicserbad):
                         f6.write(' do_dicom_series_DB.py --input_dir=%s -b \n'%(drows[sind[0]]['dicom_dir']))
                         sqlcmd = "delete from exam where Eid='%s' ;\n" % (drows[sind[0]]['Eid'])
