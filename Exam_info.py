@@ -80,14 +80,14 @@ class Exam_info:
                 if "_first_file" in fdicinfo :
                     first_file = fdicinfo["_first_file"]
                 else :
-                    raise Exception('should_no_happend')
+                    #raise Exception('should_no_happend')
                     first_file = self.get_first_dicom_file(series_dir[0],1)
 
                 fdicinfo = dicinfo_serie[-1]
                 if "_last_file" in fdicinfo :
                     last_file = fdicinfo["_last_file"]
                 else :
-                    raise Exception('should_no_happend')
+                    #raise Exception('should_no_happend')
                     self.log.warning("last file from alphabetic order for ser %s",fdicinfo["SName"])
                     last_dir = series_dir[-1]
                     last_file = self.get_last_dicom_file(last_dir)
@@ -433,6 +433,7 @@ class Exam_info:
             dicinfo["SeqName"] = "spectroCSI"            
             makeitshort=True
 
+
         if 'PHYSIO' in p1.ImageType :
             dicinfo["SeqName"] = "physio"            
             makeitshort=True
@@ -455,14 +456,18 @@ class Exam_info:
         
         if 'GE MEDICAL SYSTEMS' in p1.Manufacturer:
             makeitshort=False
-        
-            
+
+        if 'DERIVED' in p1.ImageType and 'REFORMATTED' in p1.ImageType and 'SECONDARY' in p1.ImageType :
+            dicinfo["SeqName"] = "arggg"            #strange babensky dicoms argg
+            makeitshort=True
+
         
         if makeitshort and self.skip_derived_series :
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
             return dicinfo
             
+
         #parsing the siemens private field, where all parameters are store in a string
         extractor = extract.MetaExtractor()
         
@@ -686,9 +691,11 @@ class Exam_info:
         if "CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow" in meta :
             dicinfo["CGating"] = int( meta.get("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"))
         
-        dicinfo = self.deduce_other_info(dicinfo)
-        
-        
+        try :
+            dicinfo = self.deduce_other_info(dicinfo) 
+        except:
+            return dicinfo
+
         #expected number of slices
         if 'spectro' in dicinfo["SeqType"] : 
             nb_slice = len(alldic)
