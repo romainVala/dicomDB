@@ -560,7 +560,9 @@ class Exam_info:
                     dicinfo["sizeX"] = float(aa[0])
                     dicinfo["sizeY"] = float(aa[1])
                     dicinfo["sizeZ"] = float( meta.get('CsaImage.SliceThickness'))
-
+                else :
+                    dicinfo["sizeZ"] = 0;
+                    
             #no slicespacing in meta so compute from slice position   
                 if 'CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[0].sPosition.dTra' in meta and \
                        'CsaSeries.MrPhoenixProtocol.sSliceArray.asSlice[1].sPosition.dTra' in meta :
@@ -578,6 +580,9 @@ class Exam_info:
                     dicinfo["SliceGap"] = gap
             
                 dicinfo["PhaseDir"] =meta.get('CsaImage.PhaseEncodingDirection')
+                if dicinfo["PhaseDir"] is None : 
+                    dicinfo["PhaseDir"] = ' '
+
                 if 'CsaImage.ImageOrientationPatient' in meta:
                     dicinfo["Affine"] = my_list_to_str(meta.get('CsaImage.ImageOrientationPatient'))
                     dicinfo["Affine"] = dicinfo["Affine"]  + my_list_to_str(meta.get('CsaImage.ImagePositionPatient'))
@@ -608,6 +613,8 @@ class Exam_info:
         elif [0x19,0x105a] in p1:
             if isinstance(p1[0x19,0x105a].value, str):
             	dicinfo["Duration"]  = p1[0x19,0x105a]
+            elif  isinstance(p1[0x19,0x105a].value, bytes):
+            	dicinfo["Duration"] = 0
             else:
             	dicinfo["Duration"]  = p1[0x19,0x105a].value/1000000
             
@@ -1403,7 +1410,7 @@ class Exam_info:
             # I remove exclusion of 'FM' imagetype because it is present in some T1 (ex MS_SPI S02)
             # remove     or 'DERIVED' in ps.ImageType because of mp2rage uni (DERIVED\PRIMARY\M\ND\UNI)
             if "ImageType" in ps:
-                if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or \
+                if 'FA' in ps.ImageType or 'OTHER' in ps.ImageType or 'SREEN' in ps.ImageType or \
                 'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
                 or 'FSM' in ps.ImageType  or 'Service Patient' in str(ps.PatientName) \
                 or 'MOCO' in ps.ImageType or 'DUMMY IMAGE' in ps.ImageType or 'TTEST' in ps.ImageType :
@@ -1413,7 +1420,10 @@ class Exam_info:
                         continue
             else:
                 continue
-                    
+
+            if 'AcquisitionTime' not in ps:
+                continue
+
             if 'ImageComments' in ps:
                 if ps.ImageComments.find('Design Matrix')>=0 or ps.ImageComments.find('Merged Image: t')>=0 or \
                 ps.ImageComments.find('t-Map')>=0 :
