@@ -414,8 +414,9 @@ class Exam_info:
         if 0x291008 in p1:
             csatype = p1[0x291008].value
             
-            if csatype.find('SPEC NUM')>=0:
-                dicinfo["SeqType"] = 'spectro'
+            if type(csatype) is str:
+                if csatype.find('SPEC NUM')>=0:
+                    dicinfo["SeqType"] = 'spectro'
 #            return self.get_dicom_serie_spectro_info(p1,dicinfo)
                 
         #Dicoms Lists PET
@@ -476,7 +477,7 @@ class Exam_info:
         if 'SequenceName' in p1:
             dicinfo["SeqName"] = p1.SequenceName 
                         
-        if 'SequenceName' in p1 or [0x19,0x109c] in p1:
+        if ('SequenceName' in p1 or [0x19,0x109c] in p1) and 'RepetitionTime' in p1 :
             dicinfo["TR"] =  float(p1.RepetitionTime)
 
             te = p1.EchoTime
@@ -1407,7 +1408,8 @@ class Exam_info:
                     if self.skip_derived_series:
                         self.log.info(" Skiping because derived %s",thefile)
                         continue
-
+            else:
+                continue
                     
             if 'ImageComments' in ps:
                 if ps.ImageComments.find('Design Matrix')>=0 or ps.ImageComments.find('Merged Image: t')>=0 or \
