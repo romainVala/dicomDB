@@ -241,7 +241,10 @@ class Exam_info:
             dicinfo["PatientsAge"] = "NULL"
         else:
             if len(p1.PatientAge)>0:
-                dicinfo["PatientsAge"] = int(p1.PatientAge[0:3])
+                try:
+                    dicinfo["PatientsAge"] = int(p1.PatientAge[0:3])
+                except:
+                    dicinfo["PatientsAge"] = 0
 
         if "PatientBirthDate" not in p1:
             dicinfo["PatientsBirthDate"]="NULL"
