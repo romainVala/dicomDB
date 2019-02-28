@@ -216,9 +216,12 @@ class Exam_info:
                 dicinfo["ExamDuration"] =0
         else:
             self.log.error("last serie %s has no duration set (duration old way)" ,last_ser['SName'])
-            p2=dicom.read_file(dic2,stop_before_pixels=True)        
+            p2=dicom.read_file(dic2,stop_before_pixels=True)
             if 0x051100a in p2:
-                dur = self.get_series_duration_from_siemens_tag(p2[0x051100a].value)    
+                if isinstance(p1[0x051100a].value,bytes):
+                    dur = 0
+                else :
+                    dur = self.get_series_duration_from_siemens_tag(p2[0x051100a].value)
             elif [0x19,0x105a] in p2:
                 dur= p2[0x19,0x105a].value/1000000
             else:
