@@ -313,7 +313,11 @@ class Exam_info:
             seqname2 = dicinfo["SeqName2"]
         else:
             seqname2=seqname
-            
+
+        if isinstance(seqname,bytes):
+            dicinfo["SeqType"] = 'to_be_defined'
+            return dicinfo
+
         if 'ep_b' in seqname: 
             dicinfo["SeqType"] = 'DWI'
         elif 'epfid' in seqname:
@@ -464,23 +468,22 @@ class Exam_info:
             dicinfo["SeqName"] = "arggg"            #strange babensky dicoms argg
             makeitshort=True
 
-        
         if makeitshort and self.skip_derived_series :
             dicinfo["Duration"] = 0
             dicinfo["_first_file"] , dicinfo["_last_file"] = dic1 , dic1
             return dicinfo
             
-
         #parsing the siemens private field, where all parameters are store in a string
         extractor = extract.MetaExtractor()
-        
+        #extractor = extract.default_extractor
+                
         try : 
             meta = extractor(p1)
         except Exception as e:
             self.log.warning('BAD DICOM first file ? %s becaus %s',alldic[0],e)
             dicinfo["corrupt"] = "Bad DICOMextract"
             return dicinfo                            
-
+       
         #Pas de sequence name dans les sequences IRM de GE
         if [0x19,0x109c] in p1:
             dicinfo["SeqName"] = p1[0x19,0x109c].value        
@@ -615,7 +618,7 @@ class Exam_info:
         if 0x051100e in p1:
              dicinfo["Orient"] = p1[0x051100e].value
 
-        
+
         if'CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec' in meta :
             dicinfo["Duration"]  = int(meta.get('CsaSeries.MrPhoenixProtocol.lTotalScanTimeSec'))
         elif [0x19,0x105a] in p1:
@@ -693,11 +696,13 @@ class Exam_info:
 
         if "CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow" in meta :
             dicinfo["CGating"] = int( meta.get("CsaSeries.MrPhoenixProtocol.sPhysioImaging.sPhysioECG.lScanWindow"))
-        
-        try :
-            dicinfo = self.deduce_other_info(dicinfo) 
-        except:
-            return dicinfo
+
+        dicinfo = self.deduce_other_info(dicinfo) 
+
+#        try :
+#            dicinfo = self.deduce_other_info(dicinfo) 
+#        except:
+#            return dicinfo
 
         #expected number of slices
         if 'spectro' in dicinfo["SeqType"] : 
@@ -784,7 +789,6 @@ class Exam_info:
         all_stack=[]
                 
         mf =dcmstack.make_key_regex_filter(['nothingtoremove'])
-
         for v in pg.values():
 #            my_stack = dcmstack.DicomStack(meta_filter=mf,time_order='AcquisitionTime')
             my_stack = dcmstack.DicomStack(meta_filter=mf,time_order='InstanceNumber')
@@ -882,7 +886,8 @@ class Exam_info:
                 dicinfo["Duration"] = ti2-ti1     
                 if int(ti2str[0:2]) < int(ti1str[0:2]): #scan hour over midnight
                     dicinfo["Duration"] += 24*3600
-                                
+
+
         if (convert_to_nii):
             
             nbs=0
@@ -1069,7 +1074,11 @@ class Exam_info:
             pps[-1] = 'dic_param_' + pps[-1]
             meta_path = '/'.join(pps)
             out_file = open(meta_path, 'w')
-            out_file.write(nii_wrp.meta_ext.to_json())
+            try : 
+                out_file.write(nii_wrp.meta_ext.to_json())
+            except:
+                self.log.error('problem writing json')
+                
             out_file.close()
             
             nii_wrp.remove_extension()
