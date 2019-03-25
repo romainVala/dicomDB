@@ -1186,6 +1186,8 @@ class Exam_info:
                 diffdir=diffinfos[0:3]
                 bvaltmp=diffinfos[3]
                 bval.append(bvaltmp)
+                if isinstance(diffdir[0],bytes):
+                    diffdir=[float(x) for x in diffdir]
             elif 'Bruker' in nw.get_meta("Manufacturer"):
                 diffall = nw.get_meta("MRDiffusionSequence",(0,0,0,ind))
                 diffdir = diffall[0]["DiffusionGradientDirectionSequence"][0]["DiffusionGradientOrientation"]
