@@ -126,6 +126,7 @@ if __name__ == '__main__':
         recup_dir = os.getcwd
     #dicom_dir0 = '/nasDicom/dicom_raw/'
     dicom_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw'
+    nifti_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw'
 
     if len(options.logfile)==0:
         options.logfile = os.path.join(recup_dir,'log_compare_recup')
@@ -165,6 +166,7 @@ if __name__ == '__main__':
             fmove.write('   chmod 755 %s \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 755 %s/* \n'%(os.path.join(dicom_dir,proto,suj)))
             fmove.write('   chmod 644 %s/*/* \n'%(os.path.join(dicom_dir,proto,suj)))
+            fmovesql.write('rm -rf %s\n'%(os.path.join(nifti_dir,proto,suj)))
             fmovesql.write('do_dicom_series_DB -c import_db --input_dir=%s\n'%(os.path.join(dicom_dir,proto,suj)))
             
         else:
@@ -188,6 +190,9 @@ if __name__ == '__main__':
                     fmove.write('mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                     fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
                     fmove.write('   chmod 644 %s/* \n'%(os.path.join(sujdic[0],ser)))
+                    pp,sujn = os.path.split(sujdic[0])
+                    pp,proton = os.path.split(pp)
+                    fmovesql.write('rm -rf %s\n'%(os.path.join(nifti_dir,proton,sujn,ser)))
                     fmovesql.write('do_dicom_series_DB -c import_db --input_dir=%s\n'%(os.path.join(sujdic[0],ser)))
 
                 else:
@@ -210,6 +215,9 @@ if __name__ == '__main__':
                             fmove.write('   mv %s %s \n'%(serrecup,os.path.join(sujdic[0],ser)))
                             fmove.write('   chmod 755 %s \n'%(os.path.join(sujdic[0],ser)))
                             fmove.write('   chmod 644 %s/* \n'%(os.path.join(sujdic[0],ser)))
+                            pp,sujn = os.path.split(sujdic[0])
+                            pp,proton = os.path.split(pp)
+                            fmovesql.write('rm -rf %s\n'%(os.path.join(nifti_dir,proton,sujn,ser)))
                             fmovesql.write('do_dicom_series_DB -c import_db --input_dir=%s\n'%(os.path.join(sujdic[0],ser)))
                             
                         else :
