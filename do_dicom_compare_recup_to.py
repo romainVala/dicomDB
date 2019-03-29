@@ -126,7 +126,7 @@ if __name__ == '__main__':
         recup_dir = os.getcwd
     #dicom_dir0 = '/nasDicom/dicom_raw/'
     dicom_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw'
-    nifti_dir = '/network/lustre/iss01/cenir/raw/irm/dicom_raw'
+    nifti_dir = '/network/lustre/iss01/cenir/raw/irm/nifti_raw'
 
     if len(options.logfile)==0:
         options.logfile = os.path.join(recup_dir,'log_compare_recup')
