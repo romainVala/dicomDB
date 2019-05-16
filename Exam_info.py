@@ -1625,7 +1625,7 @@ class Exam_info:
                         if len(ee)==0:
                             fin = nn+'.dic'
                         
-                        indn =  fin.find('(null)')
+                        indn =  fin.find('(null)') or fin.find('UNKNOWN')
                         if indn >0 :
                             fout =  fin[:indn-1]+fin[indn+6:]
                             fintxt = fin[:indn]+'\\'+fin[indn:indn+5]+'\\'+fin[indn+5:]
