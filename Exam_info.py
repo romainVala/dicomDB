@@ -1625,8 +1625,9 @@ class Exam_info:
                         if len(ee)==0:
                             fin = nn+'.dic'
                         
-                        indn =  fin.find('(null)') or fin.find('UNKNOWN')
-                        if indn >0 :
+                        indn =  (fin.find('(null)')>0) or (fin.find('UNKNOWN')>0)
+                        #print('inde is %d',indn)
+                        if indn :
                             fout =  fin[:indn-1]+fin[indn+6:]
                             fintxt = fin[:indn]+'\\'+fin[indn:indn+5]+'\\'+fin[indn+5:]
                             p1 = vol[0]
