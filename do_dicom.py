@@ -116,7 +116,10 @@ def update_exam_sql_db(Ei,test=False,do_only_insert=False):
     
     for E in Ei:
         #bad name to test update E["PatientsName"]='totqsdfo'
-        
+        if E["rid"]==0:
+            log.warning('skiping (because no rid) subject %s ', E)
+            continue
+
         #sqlcmd = "%s rid = %s AND AcquisitionTime = '%s'" % (sqlcmds,E["rid"],E["AcquisitionTime"])
         sqlcmd = "%s rid = %s AND abs(time_to_sec(AcquisitionTime)-time_to_sec('%s'))<100 AND substr(AcquisitionTime,1,10)=substr('%s',1,10)" % (sqlcmds,E["rid"],E["AcquisitionTime"],E["AcquisitionTime"])
         #print sqlcmd        
@@ -555,7 +558,8 @@ def get_dicom_exam_info(dic1,dic2):
     elif p1.ManufacturersModelName.startswith("Prisma_fit"):
         dicinfo["rid"] = 1        
     else:
-        raise NameError('this Dicom file is not from TrioTim neither Verio')
+        dicinfo["rid"] = 0
+        log.warning('this Dicom file is not from TrioTim neither Verio')
         
     if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
         dicinfo["eid"] = dicinfo["StudyDescription"][6:]
