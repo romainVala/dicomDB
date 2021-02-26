@@ -274,6 +274,14 @@ def get_first_dicom_file(ser,first):
     
     if first==1:
         thefile = ff[0]
+        while thefile.find("xml") > -1:
+            del ff[-1]
+            if len(ff)==0:
+                log.warning('Empty Serie :  %s',ser)
+                return ff
+
+            thefile = ff[-1]
+
         while True:
             try:
                 ps=dicom.read_file(os.path.join(ser,thefile))
@@ -296,8 +304,12 @@ def get_first_dicom_file(ser,first):
     if first==0:
         thefile = ff[-1]
             
-        while thefile.find("diffusion") > -1 or thefile.find("dicom_info")>-1:
+        while thefile.find("diffusion") > -1 or thefile.find("dicom_info")>-1 or thefile.find("xml") > -1:
             del ff[-1]
+            if len(ff)==0:
+                log.warning('Empty Serie :  %s',ser)
+                return ff
+
             thefile = ff[-1]
 
     thefile = os.path.join(ser,thefile)
@@ -318,7 +330,8 @@ def get_all_dicom_file(ser):
     
     newff=[]
     for thefile in ff:
-        if thefile.find("diffusion") > -1 or thefile.find("dicom_info")>-1:
+        if thefile.find("diffusion") > -1 or thefile.find("dicom_info")>-1 or thefile.find("xml")>-1 :
+        
             kdel.append(kind)
             kind=kind+1
         else:
@@ -387,7 +400,7 @@ def separate_exam_series(series_dir):
     
     return series_list
 
-def get_exam_information(in_dir,verbose=True):
+def get_exam_information(in_dir,verbose=True, xnat=False):
     dicinfo=[]
     if type(in_dir) is not list:
         in_dir = [in_dir]
@@ -395,8 +408,11 @@ def get_exam_information(in_dir,verbose=True):
     if verbose:
         log.info("Searching infon in %d dirs : %s \n",len(in_dir),in_dir)    
     
-    for adir in in_dir :        
-        series_dir = c.get_subdir_regex(adir,'^S')
+    for adir in in_dir :
+        if xnat:
+            series_dir = c.get_subdir_regex(adir,['^[0-9]','DICOM'])
+        else:
+            series_dir = c.get_subdir_regex(adir,'^S')
         if len(series_dir)==0:
             msg = "REMOVE : %s has no series dir"%(adir)
             log.warning(msg)
@@ -718,6 +734,8 @@ if __name__ == '__main__':
                                 help="it will only insert new exam in the cenir database (it will not modify existing record) ")
     parser.add_option("-f","--find_double", action="store_true", dest="find_double",default=False,
                                 help="This will print duplicate exam in the given search ")
+    parser.add_option("--xnat", action="store_true", dest="xnat",default=False,
+                                help=" to use directly on xnat dicom")
     
     (options, args) = parser.parse_args()
 
@@ -736,9 +754,16 @@ if __name__ == '__main__':
 #    logw.addHandler(fhdlw)
 #    logw.setLevel(logging.WARNING)
 
-    #parse_exam_in_dicom_raw()
+    if options.xnat:
+        rootdir =  '/network/lustre/dtlake01/xnat/archive/'
+        level = 3
+    else:
+        rootdir = options.rootdir
+        level = 1
+        
+        #parse_exam_in_dicom_raw()
     if options.nb_days:
-        d = c.get_all_newer_subdir(options.rootdir,1,nbdays=options.nb_days)
+        d = c.get_all_newer_subdir(rootdir,level,nbdays=options.nb_days)
     elif options.from_logfile :
         import datetime as da
         import time
@@ -749,12 +774,17 @@ if __name__ == '__main__':
         nbdays = nbdays.days + 3
         
         log.info("\n ********************************\n Searching exam older than %s days \n",(nbdays))
-        d = c.get_all_newer_subdir(options.rootdir,1,nbdays=nbdays)
+        d = c.get_all_newer_subdir(rootdir,level,nbdays=nbdays)
         
     else:
-        d = c.get_subdir_regex(options.rootdir,[options.proto_reg,options.suj_reg],verbose=True)
+        if options.xnat:
+            root_dir = '/network/lustre/dtlake01/xnat/archive/'
+            d = c.get_subdir_regex(root_dir,[options.proto_reg,'arc',options.suj_reg,'SCAN'],verbose=True)
+            log.info('Found %d suj \nfirst is %s'%(len(d),d[0]))
+        else:
+            d = c.get_subdir_regex(rootdir,[options.proto_reg,options.suj_reg],verbose=True)
     
-    Ei = get_exam_information(d)
+    Ei = get_exam_information(d, xnat=options.xnat)
 
     if options.find_double :
         find_double_exam(Ei)
