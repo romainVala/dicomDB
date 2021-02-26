@@ -53,7 +53,7 @@ class Exam_info:
                     adir=adir[:-1]
                 series_dir = [adir]
                 adir = os.path.dirname(adir)
-            else:                
+            else:
                 series_dir = c.get_subdir_regex(adir,'^S')
                 
             if len(series_dir)==0:
