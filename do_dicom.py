@@ -10,6 +10,7 @@ import common as c
 import numpy as np
 import os,math,re,dicom,time,logging,datetime,sys
 import MySQLdb as mdb
+import requests
 
 db_field_all = ("eid","rid","PatientsName","AcquisitionTime","ExamDuration","PatientsBirthDate","PatientsAge","PatientsSex","PatientsWeight",\
     "SoftwareVersions","FirstSerieName","LastSerieName")
@@ -102,88 +103,32 @@ def update_exam_sql_db(Ei,test=False,do_only_insert=False):
     input a list of exam dir: get the exam info and submit to the cenir db if the line does not exist
     or if some parameter has change
     """
-    con = mdb.connect(host = 'mysql.lixium.fr', user = 'cenir', passwd =  'y0p4l4sql', db = 'cenir')
-    cur = con.cursor(mdb.cursors.DictCursor)
-    cur2 = con.cursor()
-    
-    sqlcmds = "SELECT * from gg_examen WHERE "
-    
-    #field_new_value = []
-    #field_old_value = []
-    
-    #Ei = get_exam_information(in_dir)
-    #Ei[0]["PatientsName"]='totqsdfo'
-    
+
+    API_URL = 'https://reservation-cenir.icm-institute.org/api/exams/add.php'
+    API_TOKEN = 'KLEvXTew9WYco3T25ztB'
+
+
     for E in Ei:
-        #bad name to test update E["PatientsName"]='totqsdfo'
+        #bad name to test update
+        #E["PatientsName"]='totqsdfo'
         if E["rid"]==0:
             log.warning('skiping (because no rid) subject %s ', E)
             continue
 
-        #sqlcmd = "%s rid = %s AND AcquisitionTime = '%s'" % (sqlcmds,E["rid"],E["AcquisitionTime"])
-        sqlcmd = "%s rid = %s AND abs(time_to_sec(AcquisitionTime)-time_to_sec('%s'))<100 AND substr(AcquisitionTime,1,10)=substr('%s',1,10)" % (sqlcmds,E["rid"],E["AcquisitionTime"],E["AcquisitionTime"])
-        #print sqlcmd        
-        cur.execute(sqlcmd)
-        if cur.rowcount == 1 :
-            data = cur.fetchone()
-            #ppoo
-            #check if some field have change
-            dicom_changes=False
-            field_change = []
-            for f in db_field_all:
-                #print f + "  E : " + str(E[f]) + "   sql : " + str(data[f])
-                if data[f] != E[f] :
-                    #log.info('field %s differ sdb : %s dic : %s',f,data[f],E[f])
-                    dicom_changes=True
-                    field_change.append(f)
-                    #field_new_value.append(E[f])
-                    #field_old_value.append(data[f])
-            if do_only_insert is False:                    
-                if dicom_changes:
-                    infostr = "SQL UPDATE of pat=%s : proto=%s : date=%s "%(E['PatientsName'],E['eid'],E['AcquisitionTime'])
-                    #logw.warning("SQL UPDATE of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
-                    infostr += "\n\tFiled change : "
-                    for f in field_change:
-                        infostr += "\n\t %s : \t %s \t -> \t\t%s" %(f,data[f],E[f])
-                    infostr+='\n\n'
-                    log.warning(infostr) 
-                    #logw.warning(infostr) 
-                    
-                    #if test:
-                    cmd_sql = get_sql_update_cmd(E,data['crid'])
-                    log.info('SQL update will be %s',cmd_sql)
-                        
-                    if test is False :
-                        cur2.execute(cmd_sql)
-                        con.commit()
-                
-        elif cur.rowcount == 0:
-            
-            log.info("SQL INSERT of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
+        params = E
 
-            #check if there is the same subject the same day WHERE `AcquisitionTime` LIKE '2013-08-06%'
-            sqlcmd = "SELECT * from gg_examen WHERE rid = %s AND AcquisitionTime LIKE '%s%%' AND PatientsName='%s'" % (E["rid"],E['AcquisitionTime'].date(),E["PatientsName"])
-            cur.execute(sqlcmd)
-            if cur.rowcount == 1 :
-                data = cur.fetchone()
-                difftime = data["AcquisitionTime"]-E['AcquisitionTime']
-                difftimesecond = difftime.days*86400 + difftime.seconds #si negative il met -1 jour et les second correspondante
-                log.warning("New insert BUT already the same subject the same daye  :  %d second before",difftimesecond)
-            
-            if test is False :
-                cur2.execute(get_sql_insert_cmd(E))
-                con.commit()
-        else:
-            msg = "ERROR Found more than 1 line for %s " % (sqlcmd)
-            log.warning(msg)
-            data = cur.fetchall()
-            rrr = ''
-            for r in data:
-                rrr = '%s\n\t doublon %s %s/%s %s'%(rrr,r['crid'],r['eid'],r['PatientsName'],r['AcquisitionTime']) 
-            log.warning(rrr)
-            #raise NameError(msg)
-    
-    con.close()
+        params['range'] = 100  # Time range to search around AcquisitionTime
+        params['log'] = 2,  # Verbose output (0 = only errors, 1 = normal, 2 = verbose)
+        params['token'] = API_TOKEN,  # Authentication token
+        params['test'] =  test,  # Test mode
+        
+        r = requests.post(API_URL, data=params)
+        logs = r.text.splitlines()
+        for sqllog in logs:
+            log.error(sqllog) if 'ERROR' in sqllog else log.info(sqllog)
+
+        #rrr
+        
                 
                 
 def get_sql_update_cmd(E,crid):
@@ -334,6 +279,10 @@ def get_all_dicom_file(ser):
         
             kdel.append(kind)
             kind=kind+1
+        elif thefile.startswith('.') :
+            kdel.append(kind)
+            kind=kind+1
+        
         else:
             newff.append(thefile)
     kdel.reverse()
@@ -366,7 +315,7 @@ def separate_exam_series(series_dir):
         if 'FA' in ps.ImageType or 'DERIVED' in ps.ImageType or 'OTHER' in ps.ImageType or \
         'ADC' in ps.ImageType or 'TENSOR' in ps.ImageType or 'TRACEW' in ps.ImageType \
         or 'FM' in ps.ImageType or 'FSM' in ps.ImageType  or 'Service Patient' in ps.PatientsName \
-        or 'MOCO' in ps.ImageType :
+        or 'MOCO' in ps.ImageType or 'PHYSIO' in ps.ImageType :
             continue
         
         if len(ps.dir("AcquisitionDate"))==0:
@@ -376,6 +325,9 @@ def separate_exam_series(series_dir):
             else:
                 acdate.append(ps.StudyDate)
                 actime.append(ps.SeriesTime)  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
+        elif len(ps.dir("AcquisitionDateTime"))>0:
+            acdate.append(ps.AcquisitionDateTime[:8])
+            actime.append(ps.AcquisitionDateTime[8:])  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
         else:
             acdate.append(ps.AcquisitionDate)
             actime.append(ps.AcquisitionTime)  
@@ -410,7 +362,7 @@ def get_exam_information(in_dir,verbose=True, xnat=False):
     
     for adir in in_dir :
         if xnat:
-            series_dir = c.get_subdir_regex(adir,['^[0-9]','DICOM'])
+            series_dir = c.get_subdir_regex(adir,['^[0-9]','(DICOM|secondary)'])
         else:
             series_dir = c.get_subdir_regex(adir,'^S')
         if len(series_dir)==0:
@@ -419,6 +371,7 @@ def get_exam_information(in_dir,verbose=True, xnat=False):
             continue
 
         series_list = separate_exam_series(series_dir)
+
         for nbexam in range(len(series_list)):
             series_dir = series_list[nbexam]
             
@@ -453,6 +406,8 @@ def get_exam_information(in_dir,verbose=True, xnat=False):
                         find_max=False
                         imax=0
                         for f in ff:
+                            if f.startswith('.'): #skip empty file starting with .
+                                continue
                             p=dicom.read_file(os.path.join(last_dir,f))
                             #print "Inum %d t: %s" % (p.InstanceNumber,p.AcquisitionTime)
                             if p.InstanceNumber > imax:
@@ -523,6 +478,10 @@ def get_dicom_exam_info(dic1,dic2):
         dstr = p1.StudyDate
         tstr = p1.SeriesTime  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
 
+    elif len(p1.dir("AcquisitionDateTime"))>0:
+        dstr = p1.AcquisitionDateTime[:8]
+        tstr = p1.AcquisitionDateTime[8:]  #I do not know why the Acquisition Time is bad for series where AcquisitionDate missing
+
     else:
         dstr = p1.AcquisitionDate
         tstr = dicinfo["AcquisitionTime"]
@@ -558,11 +517,15 @@ def get_dicom_exam_info(dic1,dic2):
         msg = "ERROR Negative acquisition time for %s compare to %s" % (os.path.dirname(dic2),os.path.basename(os.path.dirname(dic1) ))
         deltadur = math.fabs(deltadur)
         log.error(msg)
+
+    if 'SequenceName' in p2:
+        if 'epfid' in p2.SequenceName: #argg for epi acquisition time is already ok (last volume) but dur in the duration programed on the scanne (so total number of volume) and it is not change if stop
+            dur=0
+        
     
     dicinfo["ExamDuration"] = int(math.ceil((deltadur + dur)/60.))
-    
-    dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(dic2))
-    dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(dic1))
+    dicinfo["LastSerieName"] = os.path.basename(os.path.dirname(os.path.dirname(dic2)))
+    dicinfo["FirstSerieName"] = os.path.basename(os.path.dirname(os.path.dirname(dic1)))
     dicinfo["LastSerieDuration"] = dur
     
     #for the CENIR database we need a field rid =1 for trio and 19 for Verio
@@ -573,16 +536,29 @@ def get_dicom_exam_info(dic1,dic2):
         dicinfo["rid"] = 1
     elif p1.ManufacturersModelName.startswith("Prisma_fit"):
         dicinfo["rid"] = 1        
+    elif p1.ManufacturersModelName.startswith("MAGNETOM Cima"):
+        dicinfo["rid"] = 80        
+    elif p1.ManufacturersModelName.startswith("MAGNETOM Terra.X"):
+        dicinfo["rid"] = 82        
     else:
         dicinfo["rid"] = 0
         log.warning('this Dicom file is not from TrioTim neither Verio')
-        
+    
     if dicinfo["StudyDescription"].startswith("PROTO_") or dicinfo["StudyDescription"].startswith("VERIO_"):
         dicinfo["eid"] = dicinfo["StudyDescription"][6:]
         dicinfo["facturable"]=1
     elif  dicinfo["StudyDescription"].startswith("PRISMA_") :
         dicinfo["eid"] = dicinfo["StudyDescription"][7:]
         dicinfo["facturable"]=1
+    elif  dicinfo["StudyDescription"].startswith("CIMAX1_") :
+        dicinfo["eid"] = dicinfo["StudyDescription"][7:]
+        dicinfo["facturable"]=1
+    elif  dicinfo["StudyDescription"].startswith("TERRAX_") :
+        dicinfo["eid"] = dicinfo["StudyDescription"][7:]
+        dicinfo["facturable"]=1
+#    elif  dicinfo["StudyDescription"].startswith("CENIR_") :
+#        dicinfo["eid"] = dicinfo["StudyDescription"][6:]
+#        dicinfo["facturable"]=1
     else:
         dicinfo["eid"] = dicinfo["StudyDescription"]
         dicinfo["facturable"]=0
@@ -712,8 +688,8 @@ if __name__ == '__main__':
     # Parse input arguments
     parser=OptionParser(usage=usage)
     #parser.add_option("-h", "--help", action="help")
-    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/',
-                                help="full path to the directorie of protocol default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/'")
+    parser.add_option("-r","--rootdir", action="store", dest="rootdir", default='/network/lustre/iss02/cenir/raw/irm/dicom_raw/',
+                                help="full path to the directorie of protocol default='/network/lustre/iss02/cenir/raw/irm/dicom_raw/'")
     parser.add_option("-p","--proto_regex", action="store", dest="proto_reg", default='.*',
                                 help="regular expression to select protocol dir default='.*' ")
     parser.add_option("-s","--suj_regex", action="store", dest="suj_reg", default='.*',
@@ -728,8 +704,8 @@ if __name__ == '__main__':
                                 help="if define will to twice the DB update ")
     parser.add_option("-t","--test_data_base", action="store_true", dest="test_db",default=False,
                                 help="Just write the log of what changes should be donne in the cenir database (for the selected exams). It won't take the -b option ")
-    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/network/lustre/iss01/cenir/raw/irm/dicom_raw/log_update_db.log',
-                                help="full path to the log file default='/network/lustre/iss01/cenir/raw/irm/log_update_db.log'")
+    parser.add_option("-L","--LogFile", action="store", dest="logFile", default='/network/lustre/iss02/cenir/raw/irm/dicom_raw/log_update_db.log',
+                                help="full path to the log file default='/network/lustre/iss02/cenir/raw/irm/log_update_db.log'")
     parser.add_option("-i","--do_only_insert", action="store_true", dest="do_only_insert",default=False,
                                 help="it will only insert new exam in the cenir database (it will not modify existing record) ")
     parser.add_option("-f","--find_double", action="store_true", dest="find_double",default=False,
@@ -755,7 +731,7 @@ if __name__ == '__main__':
 #    logw.setLevel(logging.WARNING)
 
     if options.xnat:
-        rootdir =  '/network/lustre/dtlake01/xnat/archive/'
+        rootdir =  '/network/iss/xnat/archive/'
         level = 3
     else:
         rootdir = options.rootdir
@@ -768,7 +744,7 @@ if __name__ == '__main__':
         import datetime as da
         import time
         today = da.datetime.today()    
-#        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss01/cenir/raw/irm/log_update_db.log"))
+#        logtime =  da.datetime.fromtimestamp(os.path.getmtime("/network/lustre/iss02/cenir/raw/irm/log_update_db.log"))
         logtime =  da.datetime.fromtimestamp(os.path.getmtime(options.logFile))
         nbdays = today - logtime;
         nbdays = nbdays.days + 3
@@ -778,7 +754,7 @@ if __name__ == '__main__':
         
     else:
         if options.xnat:
-            root_dir = '/network/lustre/dtlake01/xnat/archive/'
+            root_dir = '/network/iss/xnat/archive/'
             d = c.get_subdir_regex(root_dir,[options.proto_reg,'arc',options.suj_reg,'SCAN'],verbose=True)
             log.info('Found %d suj \nfirst is %s'%(len(d),d[0]))
         else:

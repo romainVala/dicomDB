@@ -3,6 +3,7 @@
 
 import datetime
 import os
+import requests
 from do_common import alpha_num_str_min
 
 def add_options(parser):
@@ -56,12 +57,6 @@ class Cenir_DB:
 #        self.cur = cur
 #        self.cur2 = con.cursor()
         
-        return con,cur
-
-    def open_sql_connection_lixum(self):
-        import MySQLdb as mdb
-        con = mdb.connect(host = 'mysql.lixium.fr', user = 'cenir', passwd =  'y0p4l4sql', db = 'cenir')
-        cur = con.cursor(mdb.cursors.DictCursor)
         return con,cur
 
     def update_exam_sql_db(self,Ei,test=False,do_only_insert=False):
@@ -139,91 +134,29 @@ class Cenir_DB:
         
         con.close()
         
-    def update_exam_sql_db_gg(self,Ei,test=False,do_only_insert=False):
+    def update_exam_sql_db_gg(self,Ei,test=False):
         """
         input a list of exam dir: get the exam info and submit to the cenir db if the line does not exist
         or if some parameter has change
+        ---
+        Ei: list of exams
+        test: don't really execute the inserts/updates (dry run)
         """
-        
-#        con,cur = self.open_sql_connection_lixum()
-        con,cur = self.open_sql_connection_lixum()
-        cur2 = con.cursor()
-#        con = mdb.connect(host = 'mysql.lixium.fr', user = 'cenir', passwd =  'y0p4l4sql', db = 'cenir')
-#        cur = con.cursor(mdb.cursors.DictCursor)
-#        cur2 = con.cursor()
-    
-        sqlcmds = "SELECT * from gg_examen WHERE "
-    
-    
+        API_URL = 'https://reservation-cenir.icm-institute.org/api/exams/add.php'
+        API_TOKEN = 'KLEvXTew9WYco3T25ztB'
+
         for E in Ei:
-            
+            params = E + {
+                'range': 100,  # Time range to search around AcquisitionTime
+                'log': 2,  # Verbose output (0 = only errors, 1 = normal, 2 = verbose)
+                'token': API_TOKEN,  # Authentication token
+                'test': test,  # Test mode
+            }
+            r = requests.post(API_URL, data=params)
+            logs = r.text.splitlines()
+            for log in logs:
+                self.log.error(log) if 'ERROR' in log else self.log.info(log)
 
-            
-            sqlcmd = "%s rid = %s AND abs(time_to_sec(AcquisitionTime)-time_to_sec('%s'))<100 AND substr(AcquisitionTime,1,10)=substr('%s',1,10)" % (sqlcmds,E["rid"],E["AcquisitionTime"],E["AcquisitionTime"])
-            
-            #print sqlcmd        
-            cur.execute(sqlcmd)
-            if cur.rowcount == 1 :
-                data = cur.fetchone()
-                #ppoo
-                #check if some field have change
-                dicom_changes=False
-                field_change = []
-                for f in self.db_field_gg:
-                    #print f + "  E : " + str(E[f]) + "   sql : " + str(data[f])
-                    if data[f] != E[f] :
-                        #log.info('field %s differ sdb : %s dic : %s',f,data[f],E[f])
-                        dicom_changes=True
-                        field_change.append(f)
-                        #field_new_value.append(E[f])
-                        #field_old_value.append(data[f])
-                if do_only_insert is False:                    
-                    if dicom_changes:
-                        infostr = "SQL UPDATE of pat=%s : proto=%s : date=%s "%(E['PatientsName'],E['eid'],E['AcquisitionTime'])
-                        #logw.warning("SQL UPDATE of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
-                        infostr += "\n\tFiled change : "
-                        for f in field_change:
-                            
-                            infostr += "\n\t %s : \t %s \t -> \t\t%s" %(f,data[f],E[f])
-                            infostr+='\n\n'
-                            self.log.warning(infostr) 
-                            #logw.warning(infostr) 
-                    
-                        #if test:
-                        cmd_sql = self.get_sql_update_cmd_gg(E,data['crid'])
-                        self.log.info('SQL update will be %s',cmd_sql)
-                        
-                        if test is False :
-                            cur2.execute(cmd_sql)
-                            con.commit()
-                            
-            elif cur.rowcount == 0:
-            
-                self.log.info("SQL INSERT of pat=%s : proto=%s : date=%s ",E['PatientsName'],E['eid'],E['AcquisitionTime'])
-
-                #check if there is the same subject the same day WHERE `AcquisitionTime` LIKE '2013-08-06%'
-                sqlcmd = "SELECT * from gg_examen WHERE rid = %s AND AcquisitionTime LIKE '%s%%' AND PatientsName='%s'" % (E["rid"],E['AcquisitionTime'].date(),E["PatientsName"])
-                cur.execute(sqlcmd)
-                if cur.rowcount == 1 :
-                    data = cur.fetchone()
-                    difftime = data["AcquisitionTime"]-E['AcquisitionTime']
-                    difftimesecond = difftime.days*86400 + difftime.seconds #si negative il met -1 jour et les second correspondante
-                    self.log.warning("New insert BUT already the same subject the same daye  :  %d second before",difftimesecond)
-            
-                if test is False :
-                    cur2.execute(self.get_sql_insert_cmd_gg(E))
-                    con.commit()
-            else:
-                msg = "ERROR Found more than 1 line for %s " % (sqlcmd)
-                self.log.warning(msg)
-                data = cur.fetchall()
-                rrr = ''
-                for r in data:
-                    rrr = '%s\n\t doublon %s %s/%s %s'%(rrr,r['crid'],r['eid'],r['PatientsName'],r['AcquisitionTime']) 
-                    self.log.warning(rrr)
-                    #raise NameError(msg)
-    
-        con.close()
                         
     def find_sql_doublon(self):
         self.remove_duplicate_exam()

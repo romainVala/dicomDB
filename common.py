@@ -293,9 +293,13 @@ def get_all_newer_subdir(dirs,level,nbdays=2):
             for ddd in os.listdir(dd):
                 newdir = os.path.join(dd,ddd)
                 if os.path.isdir(newdir) :
-                    #print os.path.join(dd,ddd)
-                    if os.path.getmtime(newdir)>beforet:
+                    newdirser = os.path.join(newdir,'1') #rr bug fix when dicom are change only the serie dir time is change
+                    if not os.path.isdir(newdirser):
+                        newdirser = newdir
+                    if os.path.getmtime(newdirser)>beforet:
                         sd.append(newdir)            
+                        #print 'added dir '
+                        #print newdir
     
     #print sd
 
